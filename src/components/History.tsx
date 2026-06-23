@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { Meal } from '../db';
+import type { Meal } from '../supabaseClient';
 import { Calendar, Trash2, Edit2, ChevronLeft, ChevronRight, Save, X, Utensils } from 'lucide-react';
 
 interface HistoryProps {
@@ -45,8 +45,8 @@ export default function History({
     if (!meal.id) return;
     setEditingMealId(meal.id);
     setEditName(meal.name);
-    setEditQty(meal.servingQuantity);
-    setEditSize(meal.servingSize);
+    setEditQty(meal.serving_quantity);
+    setEditSize(meal.serving_size);
     setEditCal(meal.calories);
     setEditProt(meal.protein);
     setEditCarb(meal.carbs);
@@ -61,8 +61,8 @@ export default function History({
     onUpdateMeal({
       ...meal,
       name: editName.trim(),
-      servingQuantity: Math.max(0.1, Number(editQty) || 1),
-      servingSize: editSize.trim(),
+      serving_quantity: Math.max(0.1, Number(editQty) || 1),
+      serving_size: editSize.trim(),
       calories: Math.max(0, Math.round(Number(editCal) || 0)),
       protein: Math.max(0, Number(editProt) || 0),
       carbs: Math.max(0, Number(editCarb) || 0),
@@ -91,10 +91,10 @@ export default function History({
   };
 
   // Day totals for header summary
-  const totalCal = meals.reduce((sum, m) => sum + (m.calories * (m.servingQuantity || 1)), 0);
-  const totalProt = meals.reduce((sum, m) => sum + (m.protein * (m.servingQuantity || 1)), 0);
-  const totalCarb = meals.reduce((sum, m) => sum + (m.carbs * (m.servingQuantity || 1)), 0);
-  const totalFat = meals.reduce((sum, m) => sum + (m.fat * (m.servingQuantity || 1)), 0);
+  const totalCal = meals.reduce((sum, m) => sum + (m.calories * (m.serving_quantity || 1)), 0);
+  const totalProt = meals.reduce((sum, m) => sum + (m.protein * (m.serving_quantity || 1)), 0);
+  const totalCarb = meals.reduce((sum, m) => sum + (m.carbs * (m.serving_quantity || 1)), 0);
+  const totalFat = meals.reduce((sum, m) => sum + (m.fat * (m.serving_quantity || 1)), 0);
 
   return (
     <div className="animate-slide-up" style={styles.container}>
@@ -276,8 +276,8 @@ export default function History({
                   <div style={styles.mealLayout}>
                     {/* Meal Image */}
                     <div style={styles.mealImageWrapper}>
-                      {meal.photo ? (
-                        <img src={meal.photo} alt={meal.name} style={styles.mealPhoto} />
+                      {meal.photo_url ? (
+                        <img src={meal.photo_url} alt={meal.name} style={styles.mealPhoto} />
                       ) : (
                         <div style={styles.mealPhotoPlaceholder}>
                           <Utensils size={18} style={{ color: 'var(--text-muted)' }} />
@@ -290,26 +290,26 @@ export default function History({
                       <div style={styles.mealHeaderRow}>
                         <span style={styles.mealName}>{meal.name}</span>
                         <span style={styles.mealCalories}>
-                          {Math.round(meal.calories * meal.servingQuantity)} kcal
+                          {Math.round(meal.calories * meal.serving_quantity)} kcal
                         </span>
                       </div>
 
                       <div style={styles.mealMetaRow}>
                         <span>{formatTime(meal.timestamp)}</span>
                         <span>•</span>
-                        <span>{meal.servingQuantity} {meal.servingSize}</span>
+                        <span>{meal.serving_quantity} {meal.serving_size}</span>
                       </div>
 
                       {/* Macronutrient badges */}
                       <div style={styles.macrosRow}>
                         <span style={styles.macroBadge}>
-                          P: <strong style={{ color: 'var(--text-primary)' }}>{Math.round(meal.protein * meal.servingQuantity)}g</strong>
+                          P: <strong style={{ color: 'var(--text-primary)' }}>{Math.round(meal.protein * meal.serving_quantity)}g</strong>
                         </span>
                         <span style={styles.macroBadge}>
-                          C: <strong style={{ color: 'var(--text-primary)' }}>{Math.round(meal.carbs * meal.servingQuantity)}g</strong>
+                          C: <strong style={{ color: 'var(--text-primary)' }}>{Math.round(meal.carbs * meal.serving_quantity)}g</strong>
                         </span>
                         <span style={styles.macroBadge}>
-                          F: <strong style={{ color: 'var(--text-primary)' }}>{Math.round(meal.fat * meal.servingQuantity)}g</strong>
+                          F: <strong style={{ color: 'var(--text-primary)' }}>{Math.round(meal.fat * meal.serving_quantity)}g</strong>
                         </span>
                       </div>
 
@@ -317,11 +317,11 @@ export default function History({
                       {(meal.fiber !== undefined || meal.sugar !== undefined) && (
                         <div style={styles.minorMacrosRow}>
                           {meal.fiber !== undefined && (
-                            <span style={styles.minorMacroText}>Fiber: {Math.round(meal.fiber * meal.servingQuantity * 10) / 10}g</span>
+                            <span style={styles.minorMacroText}>Fiber: {Math.round(meal.fiber * meal.serving_quantity * 10) / 10}g</span>
                           )}
                           {meal.fiber !== undefined && meal.sugar !== undefined && <span style={{ color: 'var(--text-muted)' }}>|</span>}
                           {meal.sugar !== undefined && (
-                            <span style={styles.minorMacroText}>Sugar: {Math.round(meal.sugar * meal.servingQuantity * 10) / 10}g</span>
+                            <span style={styles.minorMacroText}>Sugar: {Math.round(meal.sugar * meal.serving_quantity * 10) / 10}g</span>
                           )}
                         </div>
                       )}

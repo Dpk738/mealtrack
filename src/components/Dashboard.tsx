@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { getSetting } from '../db';
-import type { Meal, WaterLog } from '../db';
+import { getSupabase } from '../supabaseClient';
+import type { Meal, WaterLog } from '../supabaseClient';
 import { generateDailySummary } from '../gemini';
-import { Flame, Droplet, Brain, Plus, Award, ChevronRight } from 'lucide-react';
+import { Flame, Droplet, Brain, Plus, Award, ChevronRight, Database } from 'lucide-react';
 
 interface DashboardProps {
   meals: Meal[];
@@ -43,10 +43,10 @@ export default function Dashboard({
   }, [selectedDate]);
 
   // Totals calculations
-  const totalCal = meals.reduce((sum, m) => sum + (m.calories * (m.servingQuantity || 1)), 0);
-  const totalProt = meals.reduce((sum, m) => sum + (m.protein * (m.servingQuantity || 1)), 0);
-  const totalCarb = meals.reduce((sum, m) => sum + (m.carbs * (m.servingQuantity || 1)), 0);
-  const totalFat = meals.reduce((sum, m) => sum + (m.fat * (m.servingQuantity || 1)), 0);
+  const totalCal = meals.reduce((sum, m) => sum + (m.calories * (m.serving_quantity || 1)), 0);
+  const totalProt = meals.reduce((sum, m) => sum + (m.protein * (m.serving_quantity || 1)), 0);
+  const totalCarb = meals.reduce((sum, m) => sum + (m.carbs * (m.serving_quantity || 1)), 0);
+  const totalFat = meals.reduce((sum, m) => sum + (m.fat * (m.serving_quantity || 1)), 0);
   const totalWater = waterLogs.reduce((sum, w) => sum + w.amount, 0);
 
   // Percent calculations
@@ -60,8 +60,8 @@ export default function Dashboard({
   const handleGenerateInsight = async () => {
     setLoadingInsight(true);
     try {
-      const apiKey = await getSetting('geminiApiKey', '');
-      const modelName = await getSetting('geminiModel', 'gemini-2.5-flash');
+      const apiKey = localStorage.getItem('geminiApiKey') || '';
+      const modelName = localStorage.getItem('geminiModel') || 'gemini-2.5-flash';
       const response = await generateDailySummary(meals, waterLogs, goals, apiKey, modelName);
       setInsight(response);
       localStorage.setItem(`insight_${selectedDate}`, response);
@@ -124,9 +124,28 @@ export default function Dashboard({
   };
 
   const remainingCal = goals.calories - totalCal;
+  const isSupabaseConfigured = !!getSupabase();
 
   return (
     <div className="animate-slide-up" style={styles.container}>
+      {/* Onboarding Setup Guide */}
+      {!isSupabaseConfigured && (
+        <div style={styles.onboardingCard}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+            <Database size={20} style={{ color: '#cbf600', flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <h3 style={styles.onboardingTitle}>Setup Cloud Database</h3>
+              <p style={styles.onboardingText}>
+                Connect a free Supabase database to start logging food, uploading pictures, and backing up your nutrition metrics.
+              </p>
+              <button onClick={() => onNavigate('settings')} style={styles.onboardingBtn}>
+                Configure Setup <ChevronRight size={12} style={{ marginLeft: 4 }} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Target Gradients definition for progress rings */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
@@ -554,5 +573,36 @@ const styles = {
     fontSize: '13px',
     fontWeight: 600,
     marginTop: '4px',
+  },
+  onboardingCard: {
+    backgroundColor: 'rgba(203, 246, 0, 0.05)',
+    border: '1px solid rgba(203, 246, 0, 0.25)',
+    borderRadius: '20px',
+    padding: '18px',
+    marginBottom: '4px',
+  },
+  onboardingTitle: {
+    fontSize: '15px',
+    fontWeight: 700,
+    color: '#ffffff',
+    marginBottom: '6px',
+    letterSpacing: '-0.3px',
+  },
+  onboardingText: {
+    fontSize: '12px',
+    color: 'var(--text-secondary)',
+    lineHeight: '1.5',
+    marginBottom: '12px',
+  },
+  onboardingBtn: {
+    display: 'flex',
+    alignItems: 'center' as const,
+    backgroundColor: '#cbf600',
+    color: 'var(--bg-dark)',
+    border: 'none',
+    borderRadius: '10px',
+    padding: '8px 14px',
+    fontSize: '12px',
+    fontWeight: 700,
   },
 };

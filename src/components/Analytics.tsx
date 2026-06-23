@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { db, getSetting } from '../db';
-import type { Meal, WaterLog } from '../db';
+import { getSupabase } from '../supabaseClient';
+import type { Meal, WaterLog } from '../supabaseClient';
 import { Flame, Droplet, Dumbbell, Egg, Disc } from 'lucide-react';
 
 type Timeframe = 'week' | 'month' | 'year';
@@ -28,23 +28,37 @@ export default function Analytics() {
 
       // Retrieve targets
       let goal = 2000;
-      if (metric === 'calories') goal = await getSetting('goalCalories', 2000);
-      else if (metric === 'protein') goal = await getSetting('goalProtein', 130);
-      else if (metric === 'carbs') goal = await getSetting('goalCarbs', 230);
-      else if (metric === 'fat') goal = await getSetting('goalFat', 65);
-      else if (metric === 'water') goal = await getSetting('goalWater', 2500);
+      if (metric === 'calories') goal = Number(localStorage.getItem('goalCalories')) || 2000;
+      else if (metric === 'protein') goal = Number(localStorage.getItem('goalProtein')) || 130;
+      else if (metric === 'carbs') goal = Number(localStorage.getItem('goalCarbs')) || 230;
+      else if (metric === 'fat') goal = Number(localStorage.getItem('goalFat')) || 65;
+      else if (metric === 'water') goal = Number(localStorage.getItem('goalWater')) || 2500;
       setGoalValue(goal);
 
       const points: ChartDataPoint[] = [];
+      const supabase = getSupabase();
 
       if (timeframe === 'week') {
         // Last 7 days
         startDate.setDate(now.getDate() - 6);
         const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-        // Query DB
-        const meals = await db.meals.where('date').aboveOrEqual(formatDate(startDate)).toArray();
-        const water = await db.water.where('date').aboveOrEqual(formatDate(startDate)).toArray();
+        // Query Supabase
+        let meals: Meal[] = [];
+        let water: WaterLog[] = [];
+        if (supabase) {
+          const { data: mealsData } = await supabase
+            .from('meals')
+            .select('*')
+            .gte('date', formatDate(startDate));
+          meals = mealsData || [];
+
+          const { data: waterData } = await supabase
+            .from('water')
+            .select('*')
+            .gte('date', formatDate(startDate));
+          water = waterData || [];
+        }
 
         for (let i = 0; i < 7; i++) {
           const checkDate = new Date(startDate);
@@ -60,8 +74,22 @@ export default function Analytics() {
       } else if (timeframe === 'month') {
         // Last 30 days, group in chunks of 5 days or show all 30 days
         startDate.setDate(now.getDate() - 29);
-        const meals = await db.meals.where('date').aboveOrEqual(formatDate(startDate)).toArray();
-        const water = await db.water.where('date').aboveOrEqual(formatDate(startDate)).toArray();
+        
+        let meals: Meal[] = [];
+        let water: WaterLog[] = [];
+        if (supabase) {
+          const { data: mealsData } = await supabase
+            .from('meals')
+            .select('*')
+            .gte('date', formatDate(startDate));
+          meals = mealsData || [];
+
+          const { data: waterData } = await supabase
+            .from('water')
+            .select('*')
+            .gte('date', formatDate(startDate));
+          water = waterData || [];
+        }
 
         // Let's create 6 points of 5-day ranges for neat charts
         for (let i = 0; i < 6; i++) {
@@ -88,10 +116,23 @@ export default function Analytics() {
         startDate.setMonth(now.getMonth() - 11);
         const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         
-        // We will fetch all meals & water logs for the past year
         const startYearMonth = `${startDate.getFullYear()}-${String(startDate.getMonth() + 1).padStart(2, '0')}-01`;
-        const meals = await db.meals.where('date').aboveOrEqual(startYearMonth).toArray();
-        const water = await db.water.where('date').aboveOrEqual(startYearMonth).toArray();
+        
+        let meals: Meal[] = [];
+        let water: WaterLog[] = [];
+        if (supabase) {
+          const { data: mealsData } = await supabase
+            .from('meals')
+            .select('*')
+            .gte('date', startYearMonth);
+          meals = mealsData || [];
+
+          const { data: waterData } = await supabase
+            .from('water')
+            .select('*')
+            .gte('date', startYearMonth);
+          water = waterData || [];
+        }
 
         for (let i = 0; i < 12; i++) {
           const checkMonth = new Date(startDate);
@@ -114,7 +155,7 @@ export default function Analytics() {
             sum = totalWater / daysInMonth;
           } else {
             const totalMacro = filteredMeals.reduce((acc, m) => {
-              const qty = m.servingQuantity || 1;
+              const qty = m.serving_quantity || 1;
               if (metric === 'calories') return acc + (m.calories * qty);
               if (metric === 'protein') return acc + (m.protein * qty);
               if (metric === 'carbs') return acc + (m.carbs * qty);
@@ -155,7 +196,7 @@ export default function Analytics() {
       return meals
         .filter(m => m.date === dateStr)
         .reduce((sum, m) => {
-          const qty = m.servingQuantity || 1;
+          const qty = m.serving_quantity || 1;
           if (metricType === 'calories') return sum + (m.calories * qty);
           if (metricType === 'protein') return sum + (m.protein * qty);
           if (metricType === 'carbs') return sum + (m.carbs * qty);

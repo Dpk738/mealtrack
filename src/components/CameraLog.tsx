@@ -1,21 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { analyzeFoodImage } from '../gemini';
-import { getSetting } from '../db';
-import { Camera, Image as ImageIcon, Sparkles, Save, X, AlertTriangle } from 'lucide-react';
+import { getSupabase } from '../supabaseClient';
+import { Camera, Image as ImageIcon, Sparkles, Save, X, AlertTriangle, Utensils } from 'lucide-react';
 
 interface CameraLogProps {
   onMealSaved: (mealData: {
     name: string;
-    photo?: string;
+    photo_url?: string;
     calories: number;
     protein: number;
     carbs: number;
     fat: number;
     fiber: number;
     sugar: number;
-    servingSize: string;
-    servingQuantity: number;
-  }) => void;
+    serving_size: string;
+    serving_quantity: number;
+  }) => Promise<void>;
   onNavigate: (tab: any) => void;
 }
 
@@ -24,6 +24,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
   const [photo, setPhoto] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
   // Webcam-specific States
@@ -46,11 +47,8 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
 
   // Check if API key exists on load
   useEffect(() => {
-    async function checkKey() {
-      const key = await getSetting('geminiApiKey', '');
-      setHasApiKey(!!key);
-    }
-    checkKey();
+    const key = localStorage.getItem('geminiApiKey') || '';
+    setHasApiKey(!!key);
   }, []);
 
   // Clean up media tracks when streaming state terminates
@@ -162,12 +160,12 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
   };
 
   const analyzePhoto = async (base64Img: string) => {
-    const key = await getSetting('geminiApiKey', '');
+    const key = localStorage.getItem('geminiApiKey') || '';
     if (!key) {
       setErrorMsg('No Gemini API Key found. Please add a key in Settings to use image analysis.');
       return;
     }
-    const modelName = await getSetting('geminiModel', 'gemini-2.5-flash');
+    const modelName = localStorage.getItem('geminiModel') || 'gemini-2.5-flash';
 
     setLoading(true);
     setErrorMsg('');
@@ -208,28 +206,83 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
     setErrorMsg('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const dataURItoBlob = (dataURI: string) => {
+    const byteString = atob(dataURI.split(',')[1]);
+    const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+    const ab = new ArrayBuffer(byteString.length);
+    const ia = new Uint8Array(ab);
+    for (let i = 0; i < byteString.length; i++) {
+      ia[i] = byteString.charCodeAt(i);
+    }
+    return new Blob([ab], { type: mimeString });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!mealName.trim()) {
       alert('Please enter a meal name.');
       return;
     }
 
-    onMealSaved({
-      name: mealName.trim(),
-      photo: photo && photo !== 'manual' ? photo : undefined,
-      calories: Math.max(0, Number(calories) || 0),
-      protein: Math.max(0, Number(protein) || 0),
-      carbs: Math.max(0, Number(carbs) || 0),
-      fat: Math.max(0, Number(fat) || 0),
-      fiber: Math.max(0, Number(fiber) || 0),
-      sugar: Math.max(0, Number(sugar) || 0),
-      servingSize: servingSize.trim(),
-      servingQuantity: Math.max(0.1, Number(servingQuantity) || 1)
-    });
+    setSaving(true);
+    setErrorMsg('');
 
-    // Reset screen
-    setPhoto(null);
+    let finalPhotoUrl: string | undefined = undefined;
+
+    try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        throw new Error('Supabase is not configured. Please go to Setup and enter your connection details.');
+      }
+
+      if (photo && photo !== 'manual' && photo.startsWith('data:')) {
+        // Upload photo to Supabase
+        const blob = dataURItoBlob(photo);
+        const fileExt = 'jpg';
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('meal-photos')
+          .upload(filePath, blob, {
+            contentType: 'image/jpeg',
+            upsert: true
+          });
+
+        if (uploadError) {
+          console.error('Supabase storage upload error:', uploadError);
+          throw new Error(`Failed to upload photo: ${uploadError.message}`);
+        }
+
+        // Get public URL
+        const { data } = supabase.storage
+          .from('meal-photos')
+          .getPublicUrl(filePath);
+
+        finalPhotoUrl = data.publicUrl;
+      }
+
+      await onMealSaved({
+        name: mealName.trim(),
+        photo_url: finalPhotoUrl,
+        calories: Math.max(0, Number(calories) || 0),
+        protein: Math.max(0, Number(protein) || 0),
+        carbs: Math.max(0, Number(carbs) || 0),
+        fat: Math.max(0, Number(fat) || 0),
+        fiber: Math.max(0, Number(fiber) || 0),
+        sugar: Math.max(0, Number(sugar) || 0),
+        serving_size: servingSize.trim(),
+        serving_quantity: Math.max(0.1, Number(servingQuantity) || 1)
+      });
+
+      // Reset screen
+      setPhoto(null);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'Failed to save meal log.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
@@ -356,7 +409,29 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
 
       {/* Review Screen */}
       {photo && !loading && (
-        <form onSubmit={handleSubmit} style={styles.form} className="animate-fade-in">
+        saving ? (
+          <div style={styles.scanContainer} className="animate-fade-in">
+            <div style={styles.scanCard}>
+              {photo !== 'manual' ? (
+                <img src={photo} alt="Food saving" style={styles.scanImage} />
+              ) : (
+                <div style={styles.mealPhotoPlaceholder}>
+                  <Utensils size={32} style={{ color: 'var(--text-muted)' }} />
+                </div>
+              )}
+              <div style={styles.scanLine} />
+            </div>
+            
+            <div style={styles.loaderStatus}>
+              <Sparkles size={20} className="animate-pulse-glow" style={{ color: '#cbf600' }} />
+              <span style={styles.loaderText} className="animate-pulse-glow">
+                Saving to cloud database...
+              </span>
+              <p style={styles.loaderSub}>Uploading image and inserting record into Supabase PostgreSQL...</p>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} style={styles.form} className="animate-fade-in">
           {photo !== 'manual' && (
             <div style={styles.previewImageContainer}>
               <img src={photo} alt="Food preview" style={styles.previewImage} />
@@ -500,7 +575,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
             </button>
           </div>
         </form>
-      )}
+      ))}
     </div>
   );
 }
@@ -801,5 +876,12 @@ const styles = {
     height: '46px',
     borderRadius: '23px',
     backgroundColor: '#ffffff',
+  },
+  mealPhotoPlaceholder: {
+    width: '100%',
+    height: '100%',
+    display: 'flex',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
 };

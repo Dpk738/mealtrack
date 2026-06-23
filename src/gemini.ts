@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { Meal, WaterLog } from './db';
+import type { Meal, WaterLog } from './supabaseClient';
 
 // Helper to convert base64 image string to generative inline data structure
 function base64ToGenerativePart(base64DataUri: string) {
@@ -113,13 +113,13 @@ export async function generateDailySummary(
   const model = genAI.getGenerativeModel({ model: modelName });
 
   // Calculate totals
-  const totalCalories = meals.reduce((sum, m) => sum + (m.calories * (m.servingQuantity || 1)), 0);
-  const totalProtein = meals.reduce((sum, m) => sum + (m.protein * (m.servingQuantity || 1)), 0);
-  const totalCarbs = meals.reduce((sum, m) => sum + (m.carbs * (m.servingQuantity || 1)), 0);
-  const totalFat = meals.reduce((sum, m) => sum + (m.fat * (m.servingQuantity || 1)), 0);
+  const totalCalories = meals.reduce((sum, m) => sum + (m.calories * (m.serving_quantity || 1)), 0);
+  const totalProtein = meals.reduce((sum, m) => sum + (m.protein * (m.serving_quantity || 1)), 0);
+  const totalCarbs = meals.reduce((sum, m) => sum + (m.carbs * (m.serving_quantity || 1)), 0);
+  const totalFat = meals.reduce((sum, m) => sum + (m.fat * (m.serving_quantity || 1)), 0);
   const totalWater = waterLogs.reduce((sum, w) => sum + w.amount, 0);
 
-  const mealSummaries = meals.map(m => `- ${m.name}: ${m.calories} kcal, P: ${m.protein}g, C: ${m.carbs}g, F: ${m.fat}g (Qty: ${m.servingQuantity})`).join('\n');
+  const mealSummaries = meals.map(m => `- ${m.name}: ${m.calories} kcal, P: ${m.protein}g, C: ${m.carbs}g, F: ${m.fat}g (Qty: ${m.serving_quantity})`).join('\n');
 
   const prompt = `
 Generate a quick daily nutrition summary using this data.

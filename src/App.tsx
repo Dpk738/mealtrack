@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { db, getSetting } from './db';
-import type { Meal, WaterLog } from './db';
+import { getSupabase } from './supabaseClient';
+import type { Meal, WaterLog } from './supabaseClient';
 import Dashboard from './components/Dashboard';
 import CameraLog from './components/CameraLog';
 import History from './components/History';
@@ -35,23 +35,21 @@ export default function App() {
 
   // Bootstrap initial configurations on mount
   useEffect(() => {
-    async function bootstrap() {
+    function bootstrap() {
       const todayStr = getTodayDateString();
       setSelectedDate(todayStr);
 
-      const hasCal = await db.settings.get('goalCalories');
+      const hasCal = localStorage.getItem('goalCalories');
       if (!hasCal) {
-        await db.settings.bulkPut([
-          { key: 'goalCalories', value: 2000 },
-          { key: 'goalProtein', value: 130 },
-          { key: 'goalCarbs', value: 230 },
-          { key: 'goalFat', value: 65 },
-          { key: 'goalWater', value: 2500 },
-          { key: 'geminiApiKey', value: '' }
-        ]);
+        localStorage.setItem('goalCalories', '2000');
+        localStorage.setItem('goalProtein', '130');
+        localStorage.setItem('goalCarbs', '230');
+        localStorage.setItem('goalFat', '65');
+        localStorage.setItem('goalWater', '2500');
+        localStorage.setItem('geminiApiKey', '');
       }
       
-      await refreshGoals();
+      refreshGoals();
     }
     bootstrap();
   }, []);
@@ -63,18 +61,43 @@ export default function App() {
   }, [selectedDate, activeTab]);
 
   const loadDayData = async () => {
-    const dayMeals = await db.meals.where('date').equals(selectedDate).toArray();
-    const dayWater = await db.water.where('date').equals(selectedDate).toArray();
-    setMeals(dayMeals);
-    setWaterLogs(dayWater);
+    const supabase = getSupabase();
+    if (!supabase) {
+      setMeals([]);
+      setWaterLogs([]);
+      return;
+    }
+
+    try {
+      const { data: dayMeals, error: mealsErr } = await supabase
+        .from('meals')
+        .select('*')
+        .eq('date', selectedDate);
+
+      if (mealsErr) console.error('Meals query error:', mealsErr);
+
+      const { data: dayWater, error: waterErr } = await supabase
+        .from('water')
+        .select('*')
+        .eq('date', selectedDate);
+
+      if (waterErr) console.error('Water query error:', waterErr);
+
+      setMeals(dayMeals || []);
+      setWaterLogs(dayWater || []);
+    } catch (e) {
+      console.error('Error loading data from Supabase:', e);
+      setMeals([]);
+      setWaterLogs([]);
+    }
   };
 
-  const refreshGoals = async () => {
-    const cal = await getSetting('goalCalories', 2000);
-    const prot = await getSetting('goalProtein', 130);
-    const carb = await getSetting('goalCarbs', 230);
-    const fat = await getSetting('goalFat', 65);
-    const water = await getSetting('goalWater', 2500);
+  const refreshGoals = () => {
+    const cal = Number(localStorage.getItem('goalCalories')) || 2000;
+    const prot = Number(localStorage.getItem('goalProtein')) || 130;
+    const carb = Number(localStorage.getItem('goalCarbs')) || 230;
+    const fat = Number(localStorage.getItem('goalFat')) || 65;
+    const water = Number(localStorage.getItem('goalWater')) || 2500;
 
     setGoals({
       calories: cal,
@@ -87,40 +110,92 @@ export default function App() {
 
   const handleAddWater = async (amount: number) => {
     if (amount <= 0) return;
-    const newLog: WaterLog = {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const newLog = {
       date: selectedDate,
       timestamp: new Date().toISOString(),
       amount
     };
-    await db.water.add(newLog);
-    await loadDayData();
+
+    try {
+      const { error } = await supabase.from('water').insert([newLog]);
+      if (error) console.error('Add water error:', error);
+      await loadDayData();
+    } catch (e) {
+      console.error('Error adding water to Supabase:', e);
+    }
   };
 
   const handleMealSaved = async (mealData: Omit<Meal, 'date' | 'timestamp'>) => {
-    const newMeal: Meal = {
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    const newMeal = {
       ...mealData,
       date: selectedDate,
       timestamp: new Date().toISOString()
     };
-    await db.meals.add(newMeal);
-    await loadDayData();
-    setActiveTab('dashboard'); // Redirect to dashboard to see results
+
+    try {
+      const { error } = await supabase.from('meals').insert([newMeal]);
+      if (error) console.error('Save meal error:', error);
+      await loadDayData();
+      setActiveTab('dashboard'); // Redirect to dashboard to see results
+    } catch (e) {
+      console.error('Error saving meal to Supabase:', e);
+    }
   };
 
   const handleUpdateMeal = async (updatedMeal: Meal) => {
     if (!updatedMeal.id) return;
-    await db.meals.put(updatedMeal);
-    await loadDayData();
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    try {
+      const { error } = await supabase
+        .from('meals')
+        .update({
+          name: updatedMeal.name,
+          serving_quantity: updatedMeal.serving_quantity,
+          serving_size: updatedMeal.serving_size,
+          calories: updatedMeal.calories,
+          protein: updatedMeal.protein,
+          carbs: updatedMeal.carbs,
+          fat: updatedMeal.fat,
+          fiber: updatedMeal.fiber,
+          sugar: updatedMeal.sugar
+        })
+        .eq('id', updatedMeal.id);
+
+      if (error) console.error('Update meal error:', error);
+      await loadDayData();
+    } catch (e) {
+      console.error('Error updating meal in Supabase:', e);
+    }
   };
 
   const handleDeleteMeal = async (id: number) => {
-    await db.meals.delete(id);
-    await loadDayData();
+    const supabase = getSupabase();
+    if (!supabase) return;
+
+    try {
+      const { error } = await supabase
+        .from('meals')
+        .delete()
+        .eq('id', id);
+
+      if (error) console.error('Delete meal error:', error);
+      await loadDayData();
+    } catch (e) {
+      console.error('Error deleting meal from Supabase:', e);
+    }
   };
 
-  const handleSettingsSaved = async () => {
-    await refreshGoals();
-    await loadDayData();
+  const handleSettingsSaved = () => {
+    refreshGoals();
+    loadDayData();
   };
 
   const renderContent = () => {

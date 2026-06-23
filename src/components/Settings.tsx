@@ -1,57 +1,81 @@
 import React, { useState, useEffect } from 'react';
-import { getSetting, setSetting, db } from '../db';
-import { Save, RefreshCw, Key, ShieldAlert } from 'lucide-react';
+import { resetSupabaseInstance, testSupabaseConnection } from '../supabaseClient';
+import { Save, Key, Database, Link2, Copy, Check } from 'lucide-react';
 
 interface SettingsProps {
   onSettingsSaved: () => void;
 }
 
 export default function Settings({ onSettingsSaved }: SettingsProps) {
+  const [supabaseUrl, setSupabaseUrl] = useState('');
+  const [supabaseAnonKey, setSupabaseAnonKey] = useState('');
   const [apiKey, setApiKey] = useState('');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
+  
   const [calorieGoal, setCalorieGoal] = useState(2000);
   const [proteinGoal, setProteinGoal] = useState(130);
   const [carbGoal, setCarbGoal] = useState(230);
   const [fatGoal, setFatGoal] = useState(65);
   const [waterGoal, setWaterGoal] = useState(2500);
-  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
-  const [loading, setLoading] = useState(true);
+
+  const [connectionStatus, setConnectionStatus] = useState<{ type: 'success' | 'error' | ''; message: string }>({
+    type: '',
+    message: ''
+  });
+  const [testingConnection, setTestingConnection] = useState(false);
   const [savedMessage, setSavedMessage] = useState('');
+  const [copiedSql, setCopiedSql] = useState(false);
 
   useEffect(() => {
-    async function loadSettings() {
-      const key = await getSetting('geminiApiKey', '');
-      const cal = await getSetting('goalCalories', 2000);
-      const prot = await getSetting('goalProtein', 130);
-      const carb = await getSetting('goalCarbs', 230);
-      const fat = await getSetting('goalFat', 65);
-      const water = await getSetting('goalWater', 2500);
-      const model = await getSetting('geminiModel', 'gemini-2.5-flash');
+    // Load config from localStorage
+    setSupabaseUrl(localStorage.getItem('supabaseUrl') || '');
+    setSupabaseAnonKey(localStorage.getItem('supabaseAnonKey') || '');
+    setApiKey(localStorage.getItem('geminiApiKey') || '');
+    setSelectedModel(localStorage.getItem('geminiModel') || 'gemini-2.5-flash');
 
-      setApiKey(key);
-      setCalorieGoal(cal);
-      setProteinGoal(prot);
-      setCarbGoal(carb);
-      setFatGoal(fat);
-      setWaterGoal(water);
-      setSelectedModel(model);
-      setLoading(false);
-    }
-    loadSettings();
+    setCalorieGoal(Number(localStorage.getItem('goalCalories')) || 2000);
+    setProteinGoal(Number(localStorage.getItem('goalProtein')) || 130);
+    setCarbGoal(Number(localStorage.getItem('goalCarbs')) || 230);
+    setFatGoal(Number(localStorage.getItem('goalFat')) || 65);
+    setWaterGoal(Number(localStorage.getItem('goalWater')) || 2500);
   }, []);
+
+  const handleTestConnection = async () => {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      setConnectionStatus({ type: 'error', message: 'Please input both Supabase URL and Anon Key first.' });
+      return;
+    }
+    setTestingConnection(true);
+    setConnectionStatus({ type: '', message: '' });
+    
+    const result = await testSupabaseConnection(supabaseUrl.trim(), supabaseAnonKey.trim());
+    setConnectionStatus({
+      type: result.success ? 'success' : 'error',
+      message: result.message
+    });
+    setTestingConnection(false);
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavedMessage('');
 
-    await setSetting('geminiApiKey', apiKey.trim());
-    await setSetting('goalCalories', Math.max(100, Number(calorieGoal) || 2000));
-    await setSetting('goalProtein', Math.max(0, Number(proteinGoal) || 130));
-    await setSetting('goalCarbs', Math.max(0, Number(carbGoal) || 230));
-    await setSetting('goalFat', Math.max(0, Number(fatGoal) || 65));
-    await setSetting('goalWater', Math.max(100, Number(waterGoal) || 2500));
-    await setSetting('geminiModel', selectedModel);
+    // Save to localStorage
+    localStorage.setItem('supabaseUrl', supabaseUrl.trim());
+    localStorage.setItem('supabaseAnonKey', supabaseAnonKey.trim());
+    localStorage.setItem('geminiApiKey', apiKey.trim());
+    localStorage.setItem('geminiModel', selectedModel);
 
-    setSavedMessage('Settings saved successfully!');
+    localStorage.setItem('goalCalories', String(Math.max(100, Number(calorieGoal) || 2000)));
+    localStorage.setItem('goalProtein', String(Math.max(0, Number(proteinGoal) || 130)));
+    localStorage.setItem('goalCarbs', String(Math.max(0, Number(carbGoal) || 230)));
+    localStorage.setItem('goalFat', String(Math.max(0, Number(fatGoal) || 65)));
+    localStorage.setItem('goalWater', String(Math.max(100, Number(waterGoal) || 2500)));
+
+    // Reset supabase client instance singleton
+    resetSupabaseInstance(supabaseUrl.trim(), supabaseAnonKey.trim());
+
+    setSavedMessage('Configuration saved successfully!');
     onSettingsSaved();
 
     setTimeout(() => {
@@ -59,40 +83,128 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
     }, 3000);
   };
 
-  const handleResetData = async () => {
-    if (window.confirm('Are you sure you want to clear ALL logged food and water history? This cannot be undone.')) {
-      await db.meals.clear();
-      await db.water.clear();
-      alert('All local tracker logs cleared.');
-      onSettingsSaved();
-    }
-  };
+  const sqlSchema = `-- Run this in your Supabase SQL Editor:
 
-  if (loading) {
-    return (
-      <div style={styles.loadingContainer}>
-        <RefreshCw size={24} style={styles.spinner} />
-        <p style={{ marginTop: 12, color: 'var(--text-secondary)' }}>Loading settings...</p>
-      </div>
-    );
-  }
+-- 1. Create meals table
+CREATE TABLE IF NOT EXISTS public.meals (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  date text NOT NULL,
+  timestamp timestamp with time zone NOT NULL,
+  name text NOT NULL,
+  photo_url text,
+  calories numeric DEFAULT 0 NOT NULL,
+  protein numeric DEFAULT 0 NOT NULL,
+  carbs numeric DEFAULT 0 NOT NULL,
+  fat numeric DEFAULT 0 NOT NULL,
+  fiber numeric DEFAULT 0 NOT NULL,
+  sugar numeric DEFAULT 0 NOT NULL,
+  serving_size text DEFAULT '1 portion'::text NOT NULL,
+  serving_quantity numeric DEFAULT 1 NOT NULL
+);
+
+-- 2. Create water table
+CREATE TABLE IF NOT EXISTS public.water (
+  id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+  created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  date text NOT NULL,
+  timestamp timestamp with time zone NOT NULL,
+  amount numeric DEFAULT 0 NOT NULL
+);
+
+-- 3. Enable RLS Policies for Anon access
+ALTER TABLE public.meals ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.water ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow public read" ON public.meals FOR SELECT USING (true);
+CREATE POLICY "Allow public insert" ON public.meals FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update" ON public.meals FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete" ON public.meals FOR DELETE USING (true);
+
+CREATE POLICY "Allow public read water" ON public.water FOR SELECT USING (true);
+CREATE POLICY "Allow public insert water" ON public.water FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow public update water" ON public.water FOR UPDATE USING (true);
+CREATE POLICY "Allow public delete water" ON public.water FOR DELETE USING (true);`;
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(sqlSchema);
+    setCopiedSql(true);
+    setTimeout(() => setCopiedSql(false), 2000);
+  };
 
   return (
     <div className="animate-slide-up" style={styles.container}>
-      <h2 style={styles.title}>Settings</h2>
+      <h2 style={styles.title}>Setup & Goals</h2>
       
       <form onSubmit={handleSave} style={styles.form}>
+        {/* Supabase config card */}
         <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Gemini API Configuration</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Database size={18} style={{ color: '#cbf600' }} />
+            <h3 style={styles.sectionTitle}>Supabase Cloud Database</h3>
+          </div>
           <p style={styles.description}>
-            NutriTrack uses the Gemini Vision model locally to analyze food photos.
-            Your API Key is saved securely in your browser's local database.
+            Log into Supabase, create a free project, and paste your connection details below.
           </p>
-          
+
           <div style={styles.inputGroup}>
             <label style={styles.label}>
-              <Key size={14} style={{ marginRight: 6 }} /> Gemini API Key
+              <Link2 size={13} style={{ marginRight: 6 }} /> Supabase Project URL
             </label>
+            <input
+              type="text"
+              placeholder="https://your-project-id.supabase.co"
+              value={supabaseUrl}
+              onChange={(e) => setSupabaseUrl(e.target.value)}
+              style={styles.input}
+            />
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>
+              <Key size={13} style={{ marginRight: 6 }} /> Supabase Anon Key (Public API Key)
+            </label>
+            <input
+              type="password"
+              placeholder="Paste your anon public key here..."
+              value={supabaseAnonKey}
+              onChange={(e) => setSupabaseAnonKey(e.target.value)}
+              style={styles.input}
+            />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleTestConnection}
+            disabled={testingConnection}
+            style={styles.connectionTestBtn}
+          >
+            {testingConnection ? 'Testing Connection...' : 'Test Connection'}
+          </button>
+
+          {connectionStatus.message && (
+            <div
+              style={{
+                ...styles.connectionAlert,
+                backgroundColor: connectionStatus.type === 'success' ? 'rgba(203, 246, 0, 0.05)' : 'rgba(255, 94, 98, 0.05)',
+                borderColor: connectionStatus.type === 'success' ? 'rgba(203, 246, 0, 0.25)' : 'rgba(255, 94, 98, 0.25)',
+                color: connectionStatus.type === 'success' ? '#cbf600' : '#ff5e62',
+              }}
+            >
+              {connectionStatus.message}
+            </div>
+          )}
+        </div>
+
+        {/* Gemini Vision config card */}
+        <div style={styles.section}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Key size={18} style={{ color: '#cbf600' }} />
+            <h3 style={styles.sectionTitle}>Gemini API Configuration</h3>
+          </div>
+          
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Gemini API Key</label>
             <input
               type="password"
               placeholder="Paste your Gemini API Key here..."
@@ -100,9 +212,6 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
               onChange={(e) => setApiKey(e.target.value)}
               style={styles.input}
             />
-            <small style={styles.helpText}>
-              Don't have an API key? You can get a free one from Google AI Studio.
-            </small>
           </div>
 
           <div style={styles.inputGroup}>
@@ -112,17 +221,15 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
               onChange={(e) => setSelectedModel(e.target.value)}
               style={styles.input}
             >
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard - Recommended)</option>
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash (New / High Accuracy)</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Standard - Recommended)</option>
               <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fast)</option>
-              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Detailed Analysis)</option>
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Legacy)</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Detailed)</option>
             </select>
-            <small style={styles.helpText}>
-              If one model reports a "Not Found" error, try selecting a newer version (e.g. Gemini 2.5 Flash).
-            </small>
           </div>
         </div>
 
+        {/* Daily Targets config card */}
         <div style={styles.section}>
           <h3 style={styles.sectionTitle}>Daily Targets</h3>
           
@@ -202,21 +309,33 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
 
         <button type="submit" style={styles.submitBtn}>
           <Save size={16} style={{ marginRight: 8 }} />
-          Save Settings
+          Save Configurations
         </button>
       </form>
 
-      <div style={styles.dangerZone}>
-        <h3 style={styles.dangerTitle}>
-          <ShieldAlert size={16} style={{ marginRight: 6, color: '#ff5e62' }} />
-          Danger Zone
-        </h3>
-        <p style={styles.description}>
-          Permanently delete all food logs, water records, and reset database storage.
+      {/* SQL Migration script panel */}
+      <div style={styles.sqlCard}>
+        <div style={styles.sqlHeader}>
+          <span style={styles.sqlTitle}>Supabase SQL Schema Setup</span>
+          <button onClick={handleCopySql} style={styles.copyBtn}>
+            {copiedSql ? (
+              <>
+                <Check size={14} style={{ marginRight: 4 }} /> Copied
+              </>
+            ) : (
+              <>
+                <Copy size={14} style={{ marginRight: 4 }} /> Copy SQL
+              </>
+            )}
+          </button>
+        </div>
+        <p style={{ ...styles.description, marginBottom: 12 }}>
+          Copy this script, open the **SQL Editor** inside your Supabase dashboard, click "New Query", paste it, and run it.
         </p>
-        <button onClick={handleResetData} style={styles.dangerBtn}>
-          Reset App Data
-        </button>
+        <pre style={styles.sqlCodeBlock}>{sqlSchema}</pre>
+        <p style={{ ...styles.description, marginTop: 12 }}>
+          ⚠️ **Storage Bucket Reminder:** Go to **Storage** inside Supabase, create a **Public** bucket named **`meal-photos`**, and configure public access policies to allow image uploads.
+        </p>
       </div>
     </div>
   );
@@ -289,49 +408,80 @@ const styles = {
     display: 'flex',
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
-    background: 'var(--text-primary)',
+    background: '#cbf600',
     color: 'var(--bg-dark)',
     border: 'none',
     borderRadius: '12px',
     padding: '14px',
     fontSize: '15px',
-    fontWeight: 600,
+    fontWeight: 700,
     marginTop: '8px',
   },
+  connectionTestBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-primary)',
+    borderRadius: '10px',
+    padding: '10px',
+    fontSize: '13px',
+    fontWeight: 600,
+  },
+  connectionAlert: {
+    border: '1px solid',
+    borderRadius: '10px',
+    padding: '10px',
+    fontSize: '12px',
+    lineHeight: '1.4',
+  },
   successAlert: {
-    backgroundColor: 'rgba(56, 239, 125, 0.1)',
-    border: '1px solid rgba(56, 239, 125, 0.3)',
-    color: '#38ef7d',
+    backgroundColor: 'rgba(203, 246, 0, 0.05)',
+    border: '1px solid rgba(203, 246, 0, 0.25)',
+    color: '#cbf600',
     borderRadius: '12px',
     padding: '12px',
     fontSize: '13px',
     textAlign: 'center' as const,
   },
-  dangerZone: {
-    marginTop: '12px',
-    backgroundColor: 'rgba(255, 94, 98, 0.05)',
+  sqlCard: {
+    backgroundColor: 'var(--bg-card)',
     borderRadius: '16px',
     padding: '20px',
-    border: '1px solid rgba(255, 94, 98, 0.2)',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '12px',
+    border: '1px solid var(--border-color)',
   },
-  dangerTitle: {
+  sqlHeader: {
+    display: 'flex',
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
+    marginBottom: '10px',
+  },
+  sqlTitle: {
     fontSize: '15px',
     fontWeight: 600,
-    color: '#ff5e62',
+    color: 'var(--text-primary)',
+  },
+  copyBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-secondary)',
+    borderRadius: '8px',
+    padding: '6px 12px',
+    fontSize: '12px',
+    fontWeight: 600,
     display: 'flex',
     alignItems: 'center' as const,
   },
-  dangerBtn: {
-    backgroundColor: 'rgba(255, 94, 98, 0.1)',
-    color: '#ff5e62',
-    border: '1px solid rgba(255, 94, 98, 0.3)',
-    borderRadius: '12px',
+  sqlCodeBlock: {
+    width: '100%',
+    maxHeight: '180px',
+    overflowY: 'auto' as const,
+    backgroundColor: '#050505',
+    color: '#a1a1aa',
+    border: '1px solid var(--border-color)',
+    borderRadius: '8px',
     padding: '12px',
-    fontSize: '14px',
-    fontWeight: 600,
+    fontSize: '11px',
+    fontFamily: 'monospace',
+    whiteSpace: 'pre' as const,
   },
   loadingContainer: {
     display: 'flex',
