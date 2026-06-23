@@ -30,6 +30,7 @@ export default function History({
   const [editFat, setEditFat] = useState(0);
   const [editFiber, setEditFiber] = useState(0);
   const [editSugar, setEditSugar] = useState(0);
+  const [editDesc, setEditDesc] = useState('');
 
   // Navigate date
   const changeDateByAmount = (days: number) => {
@@ -53,6 +54,7 @@ export default function History({
     setEditFat(meal.fat);
     setEditFiber(meal.fiber || 0);
     setEditSugar(meal.sugar || 0);
+    setEditDesc(meal.description || '');
   };
 
   const handleSaveEdit = (meal: Meal) => {
@@ -69,6 +71,7 @@ export default function History({
       fat: Math.max(0, Number(editFat) || 0),
       fiber: Math.max(0, Number(editFiber) || 0),
       sugar: Math.max(0, Number(editSugar) || 0),
+      description: editDesc.trim() || undefined,
     });
 
     setEditingMealId(null);
@@ -171,6 +174,17 @@ export default function History({
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
                         style={styles.editInput}
+                      />
+                    </div>
+
+                    <div style={styles.editRow}>
+                      <label style={styles.editLabel}>Breakdown</label>
+                      <input
+                        type="text"
+                        value={editDesc}
+                        onChange={(e) => setEditDesc(e.target.value)}
+                        style={styles.editInput}
+                        placeholder="Portion and calorie breakdown..."
                       />
                     </div>
                     
@@ -299,6 +313,10 @@ export default function History({
                         <span>•</span>
                         <span>{meal.serving_quantity} {meal.serving_size}</span>
                       </div>
+
+                      {meal.description && (
+                        <div style={styles.mealDescription}>{meal.description}</div>
+                      )}
 
                       {/* Macronutrient badges */}
                       <div style={styles.macrosRow}>
@@ -508,6 +526,13 @@ const styles = {
     color: 'var(--text-muted)',
     display: 'flex',
     gap: '6px',
+  },
+  mealDescription: {
+    fontSize: '11px',
+    color: 'var(--text-secondary)',
+    lineHeight: '1.4',
+    marginTop: '3px',
+    marginBottom: '1px',
   },
   macrosRow: {
     display: 'flex',

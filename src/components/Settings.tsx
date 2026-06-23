@@ -100,7 +100,8 @@ CREATE TABLE IF NOT EXISTS public.meals (
   fiber numeric DEFAULT 0 NOT NULL,
   sugar numeric DEFAULT 0 NOT NULL,
   serving_size text DEFAULT '1 portion'::text NOT NULL,
-  serving_quantity numeric DEFAULT 1 NOT NULL
+  serving_quantity numeric DEFAULT 1 NOT NULL,
+  description text
 );
 
 -- 2. Create water table

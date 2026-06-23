@@ -15,6 +15,7 @@ interface CameraLogProps {
     sugar: number;
     serving_size: string;
     serving_quantity: number;
+    description?: string;
   }) => Promise<void>;
   onNavigate: (tab: any) => void;
 }
@@ -42,6 +43,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
   const [fat, setFat] = useState(0);
   const [fiber, setFiber] = useState(0);
   const [sugar, setSugar] = useState(0);
+  const [description, setDescription] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -182,6 +184,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
       setFat(result.fat);
       setFiber(result.fiber);
       setSugar(result.sugar);
+      setDescription(result.description || '');
     } catch (e: any) {
       console.error(e);
       setErrorMsg(e.message || 'AI recognition failed. You can still input values manually.');
@@ -201,6 +204,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
     setFat(0);
     setFiber(0);
     setSugar(0);
+    setDescription('');
     // Set dummy photo or leave null
     setPhoto('manual');
     setErrorMsg('');
@@ -272,7 +276,8 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
         fiber: Math.max(0, Number(fiber) || 0),
         sugar: Math.max(0, Number(sugar) || 0),
         serving_size: servingSize.trim(),
-        serving_quantity: Math.max(0.1, Number(servingQuantity) || 1)
+        serving_quantity: Math.max(0.1, Number(servingQuantity) || 1),
+        description: description.trim() || undefined
       });
 
       // Reset screen
@@ -458,6 +463,27 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
                 onChange={(e) => setMealName(e.target.value)}
                 style={styles.textInput}
                 required
+              />
+            </div>
+
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Itemized Breakdown</label>
+              <textarea
+                placeholder="Gemini will auto-estimate portions and calories for each item..."
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                style={{
+                  ...styles.textInput,
+                  height: '60px',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                  border: '1px solid var(--border-color)',
+                  color: 'var(--text-primary)',
+                  fontSize: '13px',
+                  fontFamily: 'inherit',
+                  resize: 'none'
+                }}
               />
             </div>
 

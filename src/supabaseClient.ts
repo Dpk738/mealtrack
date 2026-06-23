@@ -14,6 +14,7 @@ export interface Meal {
   sugar: number;
   serving_size: string;
   serving_quantity: number;
+  description?: string;
   created_at?: string;
 }
 

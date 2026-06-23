@@ -165,7 +165,8 @@ export default function App() {
           carbs: updatedMeal.carbs,
           fat: updatedMeal.fat,
           fiber: updatedMeal.fiber,
-          sugar: updatedMeal.sugar
+          sugar: updatedMeal.sugar,
+          description: updatedMeal.description
         })
         .eq('id', updatedMeal.id);
 

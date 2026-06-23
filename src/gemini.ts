@@ -25,6 +25,7 @@ export interface DetectedNutrition {
   fat: number;
   fiber: number;
   sugar: number;
+  description?: string;
 }
 
 export async function analyzeFoodImage(
@@ -56,13 +57,15 @@ Return a JSON object in this exact format:
   "carbs": 30,
   "fat": 8,
   "fiber": 3,
-  "sugar": 5
+  "sugar": 5,
+  "description": "Brief one sentence individual item portion and calorie breakdown (e.g., '2 idlis have 60 kcal, chutney of approx 20g has 30 kcal and sambar of 20 ml has 40 kcal.')"
 }
 Notes:
 - Provide estimates for the food shown.
 - All macronutrients (protein, carbs, fat, fiber, sugar) should be numbers representing grams (g).
 - Calories should be a number representing kcal.
 - Be as accurate as possible for the identified food items.
+- Write the description in a single clear sentence.
 `;
 
   try {
@@ -85,6 +88,7 @@ Notes:
       fat: Math.max(0, Math.round((Number(parsed.fat) || 0) * 10) / 10),
       fiber: Math.max(0, Math.round((Number(parsed.fiber) || 0) * 10) / 10),
       sugar: Math.max(0, Math.round((Number(parsed.sugar) || 0) * 10) / 10),
+      description: parsed.description || '',
     };
   } catch (e) {
     console.error('Gemini Vision analysis failed:', e);
