@@ -361,7 +361,7 @@ const styles = {
     left: '50%',
     transform: 'translateX(-50%)',
     width: '100%',
-    maxWidth: '480px',
+    maxWidth: '1024px',
     height: '68px',
     backgroundColor: 'rgba(24, 24, 27, 0.85)',
     backdropFilter: 'blur(12px)',
