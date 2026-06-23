@@ -137,206 +137,213 @@ CREATE POLICY "Allow public delete water" ON public.water FOR DELETE USING (true
     <div className="animate-slide-up" style={styles.container}>
       <h2 style={styles.title}>Setup & Goals</h2>
       
-      <form onSubmit={handleSave} style={styles.form}>
-        {/* Supabase config card */}
-        <div style={styles.section}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Database size={18} style={{ color: '#cbf600' }} />
-            <h3 style={styles.sectionTitle}>Supabase Cloud Database</h3>
-          </div>
-          <p style={styles.description}>
-            Log into Supabase, create a free project, and paste your connection details below.
-          </p>
+      <div className="settings-grid" style={{ width: '100%' }}>
+        {/* Left Column: Form Settings */}
+        <div className="settings-left-col" style={{ width: '100%' }}>
+          <form onSubmit={handleSave} style={styles.form}>
+            {/* Supabase config card */}
+            <div style={styles.section}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Database size={18} style={{ color: '#cbf600' }} />
+                <h3 style={styles.sectionTitle}>Supabase Cloud Database</h3>
+              </div>
+              <p style={styles.description}>
+                Log into Supabase, create a free project, and paste your connection details below.
+              </p>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              <Link2 size={13} style={{ marginRight: 6 }} /> Supabase Project URL
-            </label>
-            <input
-              type="text"
-              placeholder="https://your-project-id.supabase.co"
-              value={supabaseUrl}
-              onChange={(e) => setSupabaseUrl(e.target.value)}
-              style={styles.input}
-            />
-          </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>
+                  <Link2 size={13} style={{ marginRight: 6 }} /> Supabase Project URL
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://your-project-id.supabase.co"
+                  value={supabaseUrl}
+                  onChange={(e) => setSupabaseUrl(e.target.value)}
+                  style={styles.input}
+                />
+              </div>
 
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>
-              <Key size={13} style={{ marginRight: 6 }} /> Supabase Anon Key (Public API Key)
-            </label>
-            <input
-              type="password"
-              placeholder="Paste your anon public key here..."
-              value={supabaseAnonKey}
-              onChange={(e) => setSupabaseAnonKey(e.target.value)}
-              style={styles.input}
-            />
-          </div>
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>
+                  <Key size={13} style={{ marginRight: 6 }} /> Supabase Anon Key (Public API Key)
+                </label>
+                <input
+                  type="password"
+                  placeholder="Paste your anon public key here..."
+                  value={supabaseAnonKey}
+                  onChange={(e) => setSupabaseAnonKey(e.target.value)}
+                  style={styles.input}
+                />
+              </div>
 
-          <button
-            type="button"
-            onClick={handleTestConnection}
-            disabled={testingConnection}
-            style={styles.connectionTestBtn}
-          >
-            {testingConnection ? 'Testing Connection...' : 'Test Connection'}
-          </button>
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={testingConnection}
+                style={styles.connectionTestBtn}
+              >
+                {testingConnection ? 'Testing Connection...' : 'Test Connection'}
+              </button>
 
-          {connectionStatus.message && (
-            <div
-              style={{
-                ...styles.connectionAlert,
-                backgroundColor: connectionStatus.type === 'success' ? 'rgba(203, 246, 0, 0.05)' : 'rgba(255, 94, 98, 0.05)',
-                borderColor: connectionStatus.type === 'success' ? 'rgba(203, 246, 0, 0.25)' : 'rgba(255, 94, 98, 0.25)',
-                color: connectionStatus.type === 'success' ? '#cbf600' : '#ff5e62',
-              }}
-            >
-              {connectionStatus.message}
-            </div>
-          )}
-        </div>
-
-        {/* Gemini Vision config card */}
-        <div style={styles.section}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Key size={18} style={{ color: '#cbf600' }} />
-            <h3 style={styles.sectionTitle}>Gemini API Configuration</h3>
-          </div>
-          
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Gemini API Key</label>
-            <input
-              type="password"
-              placeholder="Paste your Gemini API Key here..."
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              style={styles.input}
-            />
-          </div>
-
-          <div style={styles.inputGroup}>
-            <label style={styles.label}>Gemini AI Model</label>
-            <select
-              value={selectedModel}
-              onChange={(e) => setSelectedModel(e.target.value)}
-              style={styles.input}
-            >
-              <option value="gemini-2.5-flash">Gemini 2.5 Flash (Standard - Recommended)</option>
-              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fast)</option>
-              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Legacy)</option>
-              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Detailed)</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Daily Targets config card */}
-        <div style={styles.section}>
-          <h3 style={styles.sectionTitle}>Daily Targets</h3>
-          
-          <div style={styles.grid}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Calories (kcal)</label>
-              <input
-                type="number"
-                min="500"
-                max="10000"
-                value={calorieGoal}
-                onChange={(e) => setCalorieGoal(Number(e.target.value))}
-                style={styles.input}
-                required
-              />
-            </div>
-            
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Water (ml)</label>
-              <input
-                type="number"
-                min="100"
-                max="20000"
-                value={waterGoal}
-                onChange={(e) => setWaterGoal(Number(e.target.value))}
-                style={styles.input}
-                required
-              />
+              {connectionStatus.message && (
+                <div
+                  style={{
+                    ...styles.connectionAlert,
+                    backgroundColor: connectionStatus.type === 'success' ? 'rgba(203, 246, 0, 0.05)' : 'rgba(255, 94, 98, 0.05)',
+                    borderColor: connectionStatus.type === 'success' ? 'rgba(203, 246, 0, 0.25)' : 'rgba(255, 94, 98, 0.25)',
+                    color: connectionStatus.type === 'success' ? '#cbf600' : '#ff5e62',
+                  }}
+                >
+                  {connectionStatus.message}
+                </div>
+              )}
             </div>
 
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Protein (g)</label>
-              <input
-                type="number"
-                min="0"
-                max="500"
-                value={proteinGoal}
-                onChange={(e) => setProteinGoal(Number(e.target.value))}
-                style={styles.input}
-                required
-              />
+            {/* Gemini Vision config card */}
+            <div style={styles.section}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Key size={18} style={{ color: '#cbf600' }} />
+                <h3 style={styles.sectionTitle}>Gemini API Configuration</h3>
+              </div>
+              
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Gemini API Key</label>
+                <input
+                  type="password"
+                  placeholder="Paste your Gemini API Key here..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  style={styles.input}
+                />
+              </div>
+
+              <div style={styles.inputGroup}>
+                <label style={styles.label}>Gemini AI Model</label>
+                <select
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  style={styles.input}
+                >
+                  <option value="gemini-2.5-flash">Gemini 2.5 Flash (Standard - Recommended)</option>
+                  <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fast)</option>
+                  <option value="gemini-1.5-flash">Gemini 1.5 Flash (Legacy)</option>
+                  <option value="gemini-1.5-pro">Gemini 1.5 Pro (Detailed)</option>
+                </select>
+              </div>
             </div>
 
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Carbohydrates (g)</label>
-              <input
-                type="number"
-                min="0"
-                max="1000"
-                value={carbGoal}
-                onChange={(e) => setCarbGoal(Number(e.target.value))}
-                style={styles.input}
-                required
-              />
+            {/* Daily Targets config card */}
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>Daily Targets</h3>
+              
+              <div style={styles.grid}>
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Calories (kcal)</label>
+                  <input
+                    type="number"
+                    min="500"
+                    max="10000"
+                    value={calorieGoal}
+                    onChange={(e) => setCalorieGoal(Number(e.target.value))}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+                
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Water (ml)</label>
+                  <input
+                    type="number"
+                    min="100"
+                    max="20000"
+                    value={waterGoal}
+                    onChange={(e) => setWaterGoal(Number(e.target.value))}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Protein (g)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="500"
+                    value={proteinGoal}
+                    onChange={(e) => setProteinGoal(Number(e.target.value))}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Carbohydrates (g)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="1000"
+                    value={carbGoal}
+                    onChange={(e) => setCarbGoal(Number(e.target.value))}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+
+                <div style={styles.inputGroup}>
+                  <label style={styles.label}>Fat (g)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="500"
+                    value={fatGoal}
+                    onChange={(e) => setFatGoal(Number(e.target.value))}
+                    style={styles.input}
+                    required
+                  />
+                </div>
+              </div>
             </div>
 
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Fat (g)</label>
-              <input
-                type="number"
-                min="0"
-                max="500"
-                value={fatGoal}
-                onChange={(e) => setFatGoal(Number(e.target.value))}
-                style={styles.input}
-                required
-              />
-            </div>
-          </div>
-        </div>
-
-        {savedMessage && (
-          <div style={styles.successAlert} className="animate-fade-in">
-            {savedMessage}
-          </div>
-        )}
-
-        <button type="submit" style={styles.submitBtn}>
-          <Save size={16} style={{ marginRight: 8 }} />
-          Save Configurations
-        </button>
-      </form>
-
-      {/* SQL Migration script panel */}
-      <div style={styles.sqlCard}>
-        <div style={styles.sqlHeader}>
-          <span style={styles.sqlTitle}>Supabase SQL Schema Setup</span>
-          <button onClick={handleCopySql} style={styles.copyBtn}>
-            {copiedSql ? (
-              <>
-                <Check size={14} style={{ marginRight: 4 }} /> Copied
-              </>
-            ) : (
-              <>
-                <Copy size={14} style={{ marginRight: 4 }} /> Copy SQL
-              </>
+            {savedMessage && (
+              <div style={styles.successAlert} className="animate-fade-in">
+                {savedMessage}
+              </div>
             )}
-          </button>
+
+            <button type="submit" style={styles.submitBtn}>
+              <Save size={16} style={{ marginRight: 8 }} />
+              Save Configurations
+            </button>
+          </form>
         </div>
-        <p style={{ ...styles.description, marginBottom: 12 }}>
-          Copy this script, open the **SQL Editor** inside your Supabase dashboard, click "New Query", paste it, and run it.
-        </p>
-        <pre style={styles.sqlCodeBlock}>{sqlSchema}</pre>
-        <p style={{ ...styles.description, marginTop: 12 }}>
-          ⚠️ **Storage Bucket Reminder:** Go to **Storage** inside Supabase, create a **Public** bucket named **`meal-photos`**, and configure public access policies to allow image uploads.
-        </p>
+
+        {/* Right Column: SQL Migration Code */}
+        <div className="settings-right-col" style={{ width: '100%' }}>
+          <div style={styles.sqlCard}>
+            <div style={styles.sqlHeader}>
+              <span style={styles.sqlTitle}>Supabase SQL Schema Setup</span>
+              <button onClick={handleCopySql} style={styles.copyBtn}>
+                {copiedSql ? (
+                  <>
+                    <Check size={14} style={{ marginRight: 4 }} /> Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy size={14} style={{ marginRight: 4 }} /> Copy SQL
+                  </>
+                )}
+              </button>
+            </div>
+            <p style={{ ...styles.description, marginBottom: 12 }}>
+              Copy this script, open the **SQL Editor** inside your Supabase dashboard, click "New Query", paste it, and run it.
+            </p>
+            <pre style={styles.sqlCodeBlock}>{sqlSchema}</pre>
+            <p style={{ ...styles.description, marginTop: 12 }}>
+              ⚠️ **Storage Bucket Reminder:** Go to **Storage** inside Supabase, create a **Public** bucket named **`meal-photos`**, and configure public access policies to allow image uploads.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -322,7 +322,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
 
       {/* Main Upload / Camera Triggers */}
       {!photo && !isWebcamActive && (
-        <div style={styles.uploadZoneContainer}>
+        <div className="upload-zone-wrapper" style={styles.uploadZoneContainer}>
           <div style={styles.dropZone} onClick={triggerUpload}>
             <div style={styles.iconRing} className="animate-pulse-glow">
               <Camera size={28} style={{ color: 'var(--text-primary)' }} />
@@ -437,170 +437,178 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
           </div>
         ) : (
           <form onSubmit={handleSubmit} style={styles.form} className="animate-fade-in">
-          {photo !== 'manual' && (
-            <div style={styles.previewImageContainer}>
-              <img src={photo} alt="Food preview" style={styles.previewImage} />
-              <button type="button" onClick={handleCancel} style={styles.changePhotoBtn}>
-                Change Photo
-              </button>
+            <div className="camera-review-grid" style={{ width: '100%' }}>
+              {/* Left Column: Image Preview and Cancel/Save buttons */}
+              <div className="camera-left-col" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                {photo !== 'manual' && (
+                  <div style={styles.previewImageContainer}>
+                    <img src={photo} alt="Food preview" style={styles.previewImage} />
+                    <button type="button" onClick={handleCancel} style={styles.changePhotoBtn}>
+                      Change Photo
+                    </button>
+                  </div>
+                )}
+                
+                <div style={styles.actionRow}>
+                  <button type="button" onClick={handleCancel} style={styles.secondaryBtn}>
+                    Cancel
+                  </button>
+                  <button type="submit" style={styles.primaryBtn}>
+                    <Save size={16} style={{ marginRight: 6 }} /> Save Log
+                  </button>
+                </div>
+              </div>
+
+              {/* Right Column: Nutrition Inputs */}
+              <div className="camera-right-col" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+                {errorMsg && (
+                  <div style={styles.errorAlert}>
+                    <AlertTriangle size={16} style={{ color: '#ff5e62', flexShrink: 0 }} />
+                    <span style={{ fontSize: '12px' }}>{errorMsg}</span>
+                  </div>
+                )}
+
+                <div style={styles.formSection}>
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Meal Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Avocado Toast with Egg"
+                      value={mealName}
+                      onChange={(e) => setMealName(e.target.value)}
+                      style={styles.textInput}
+                      required
+                    />
+                  </div>
+
+                  <div style={styles.inputGroup}>
+                    <label style={styles.label}>Itemized Breakdown</label>
+                    <textarea
+                      placeholder="Gemini will auto-estimate portions and calories for each item..."
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      style={{
+                        ...styles.textInput,
+                        height: '60px',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid var(--border-color)',
+                        color: 'var(--text-primary)',
+                        fontSize: '13px',
+                        fontFamily: 'inherit',
+                        resize: 'none'
+                      }}
+                    />
+                  </div>
+
+                  <div style={styles.grid2}>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Serving Unit</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. bowl, plate, 250g"
+                        value={servingSize}
+                        onChange={(e) => setServingSize(e.target.value)}
+                        style={styles.textInput}
+                        required
+                      />
+                    </div>
+
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Quantity</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        max="50"
+                        value={servingQuantity}
+                        onChange={(e) => setServingQuantity(Number(e.target.value))}
+                        style={styles.textInput}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Macro grid */}
+                <div style={styles.formSection}>
+                  <h3 style={styles.sectionHeading}>Nutrition Profile</h3>
+                  
+                  <div style={styles.grid2}>
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Calories (kcal)</label>
+                      <input
+                        type="number"
+                        value={calories}
+                        onChange={(e) => setCalories(Number(e.target.value))}
+                        style={styles.textInput}
+                        required
+                      />
+                    </div>
+
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Protein (g)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={protein}
+                        onChange={(e) => setProtein(Number(e.target.value))}
+                        style={styles.textInput}
+                        required
+                      />
+                    </div>
+
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Carbohydrates (g)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={carbs}
+                        onChange={(e) => setCarbs(Number(e.target.value))}
+                        style={styles.textInput}
+                        required
+                      />
+                    </div>
+
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Fat (g)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={fat}
+                        onChange={(e) => setFat(Number(e.target.value))}
+                        style={styles.textInput}
+                        required
+                      />
+                    </div>
+
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Fiber (g)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={fiber}
+                        onChange={(e) => setFiber(Number(e.target.value))}
+                        style={styles.textInput}
+                      />
+                    </div>
+
+                    <div style={styles.inputGroup}>
+                      <label style={styles.label}>Sugar (g)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={sugar}
+                        onChange={(e) => setSugar(Number(e.target.value))}
+                        style={styles.textInput}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-
-          {errorMsg && (
-            <div style={styles.errorAlert}>
-              <AlertTriangle size={16} style={{ color: '#ff5e62', flexShrink: 0 }} />
-              <span style={{ fontSize: '12px' }}>{errorMsg}</span>
-            </div>
-          )}
-
-          <div style={styles.formSection}>
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Meal Name</label>
-              <input
-                type="text"
-                placeholder="e.g. Avocado Toast with Egg"
-                value={mealName}
-                onChange={(e) => setMealName(e.target.value)}
-                style={styles.textInput}
-                required
-              />
-            </div>
-
-            <div style={styles.inputGroup}>
-              <label style={styles.label}>Itemized Breakdown</label>
-              <textarea
-                placeholder="Gemini will auto-estimate portions and calories for each item..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                style={{
-                  ...styles.textInput,
-                  height: '60px',
-                  padding: '10px 12px',
-                  borderRadius: '10px',
-                  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)',
-                  fontSize: '13px',
-                  fontFamily: 'inherit',
-                  resize: 'none'
-                }}
-              />
-            </div>
-
-            <div style={styles.grid2}>
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Serving Unit</label>
-                <input
-                  type="text"
-                  placeholder="e.g. bowl, plate, 250g"
-                  value={servingSize}
-                  onChange={(e) => setServingSize(e.target.value)}
-                  style={styles.textInput}
-                  required
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Quantity</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  max="50"
-                  value={servingQuantity}
-                  onChange={(e) => setServingQuantity(Number(e.target.value))}
-                  style={styles.textInput}
-                  required
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Macro grid */}
-          <div style={styles.formSection}>
-            <h3 style={styles.sectionHeading}>Nutrition Profile</h3>
-            
-            <div style={styles.grid2}>
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Calories (kcal)</label>
-                <input
-                  type="number"
-                  value={calories}
-                  onChange={(e) => setCalories(Number(e.target.value))}
-                  style={styles.textInput}
-                  required
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Protein (g)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={protein}
-                  onChange={(e) => setProtein(Number(e.target.value))}
-                  style={styles.textInput}
-                  required
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Carbohydrates (g)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={carbs}
-                  onChange={(e) => setCarbs(Number(e.target.value))}
-                  style={styles.textInput}
-                  required
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Fat (g)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={fat}
-                  onChange={(e) => setFat(Number(e.target.value))}
-                  style={styles.textInput}
-                  required
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Fiber (g)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={fiber}
-                  onChange={(e) => setFiber(Number(e.target.value))}
-                  style={styles.textInput}
-                />
-              </div>
-
-              <div style={styles.inputGroup}>
-                <label style={styles.label}>Sugar (g)</label>
-                <input
-                  type="number"
-                  step="0.1"
-                  value={sugar}
-                  onChange={(e) => setSugar(Number(e.target.value))}
-                  style={styles.textInput}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div style={styles.actionRow}>
-            <button type="button" onClick={handleCancel} style={styles.secondaryBtn}>
-              Cancel
-            </button>
-            <button type="submit" style={styles.primaryBtn}>
-              <Save size={16} style={{ marginRight: 6 }} /> Save Log
-            </button>
-          </div>
-        </form>
+          </form>
       ))}
     </div>
   );

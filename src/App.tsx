@@ -250,22 +250,69 @@ export default function App() {
   };
 
   return (
-    <div style={styles.appContainer}>
-      {/* Top Header */}
-      <header style={styles.header}>
-        <h1 style={styles.logo}>NutriTrack</h1>
-        <span style={styles.dateDisplay}>
-          {formatDateDisplay(selectedDate)}
-        </span>
-      </header>
+    <div className="app-main-layout">
+      {/* Left Sidebar for Desktop/Laptop */}
+      <aside className="app-sidebar">
+        <div>
+          <div className="sidebar-logo">NutriTrack</div>
+          <nav className="sidebar-menu">
+            <button
+              className={`sidebar-item ${activeTab === 'dashboard' ? 'sidebar-item-active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              <Home size={18} />
+              <span>Today</span>
+            </button>
+            <button
+              className={`sidebar-item ${activeTab === 'history' ? 'sidebar-item-active' : ''}`}
+              onClick={() => setActiveTab('history')}
+            >
+              <HistoryIcon size={18} />
+              <span>History</span>
+            </button>
+            <button
+              className={`sidebar-item ${activeTab === 'analytics' ? 'sidebar-item-active' : ''}`}
+              onClick={() => setActiveTab('analytics')}
+            >
+              <BarChart2 size={18} />
+              <span>Trends</span>
+            </button>
+            <button
+              className={`sidebar-item ${activeTab === 'settings' ? 'sidebar-item-active' : ''}`}
+              onClick={() => setActiveTab('settings')}
+            >
+              <SettingsIcon size={18} />
+              <span>Setup</span>
+            </button>
+          </nav>
+        </div>
+        <button
+          className="sidebar-camera-btn"
+          onClick={() => setActiveTab('camera')}
+        >
+          <Camera size={18} />
+          <span>Log Food</span>
+        </button>
+      </aside>
 
-      {/* Main Screen Content */}
-      <main style={styles.main}>
-        {renderContent()}
-      </main>
+      {/* Main Content Area */}
+      <div className="app-content-wrapper">
+        {/* Top Header */}
+        <header style={styles.header}>
+          <h1 className="app-header-logo" style={styles.logo}>NutriTrack</h1>
+          <span style={styles.dateDisplay}>
+            {formatDateDisplay(selectedDate)}
+          </span>
+        </header>
 
-      {/* Glassmorphic Bottom Navigation Bar */}
-      <nav style={styles.navBar}>
+        {/* Main Screen Content */}
+        <main className="app-scrollable-content" style={styles.main}>
+          {renderContent()}
+        </main>
+      </div>
+
+      {/* Glassmorphic Bottom Navigation Bar for Mobile */}
+      <nav className="app-bottom-nav" style={styles.navBar}>
         <button
           style={{ ...styles.navItem, ...(activeTab === 'dashboard' ? styles.activeNavItem : {}) }}
           onClick={() => setActiveTab('dashboard')}

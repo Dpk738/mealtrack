@@ -149,7 +149,7 @@ export default function History({
       )}
 
       {/* Meals Log List */}
-      <div style={styles.list}>
+      <div className="history-list">
         {meals.length === 0 ? (
           <div style={styles.emptyState}>
             <Utensils size={32} style={{ color: 'var(--text-muted)' }} />

@@ -244,208 +244,216 @@ export default function Analytics() {
     <div className="animate-slide-up" style={styles.container}>
       <h2 style={styles.title}>Analytics</h2>
 
-      {/* Timeframe selector tabs */}
-      <div style={styles.timeframeTabs}>
-        <button
-          style={{ ...styles.timeTab, ...(timeframe === 'week' ? styles.activeTimeTab : {}) }}
-          onClick={() => setTimeframe('week')}
-        >
-          Week
-        </button>
-        <button
-          style={{ ...styles.timeTab, ...(timeframe === 'month' ? styles.activeTimeTab : {}) }}
-          onClick={() => setTimeframe('month')}
-        >
-          Month
-        </button>
-        <button
-          style={{ ...styles.timeTab, ...(timeframe === 'year' ? styles.activeTimeTab : {}) }}
-          onClick={() => setTimeframe('year')}
-        >
-          Year
-        </button>
-      </div>
-
-      {/* Metric selection pills */}
-      <div style={styles.metricRow}>
-        <button
-          style={{ ...styles.metricPill, ...(metric === 'calories' ? styles.activeCalPill : {}) }}
-          onClick={() => setMetric('calories')}
-        >
-          <Flame size={12} style={{ marginRight: 4 }} /> Calories
-        </button>
-        <button
-          style={{ ...styles.metricPill, ...(metric === 'water' ? styles.activeWaterPill : {}) }}
-          onClick={() => setMetric('water')}
-        >
-          <Droplet size={12} style={{ marginRight: 4 }} /> Water
-        </button>
-        <button
-          style={{ ...styles.metricPill, ...(metric === 'protein' ? styles.activeProtPill : {}) }}
-          onClick={() => setMetric('protein')}
-        >
-          <Dumbbell size={12} style={{ marginRight: 4 }} /> Protein
-        </button>
-        <button
-          style={{ ...styles.metricPill, ...(metric === 'carbs' ? styles.activeCarbPill : {}) }}
-          onClick={() => setMetric('carbs')}
-        >
-          <Egg size={12} style={{ marginRight: 4 }} /> Carbs
-        </button>
-        <button
-          style={{ ...styles.metricPill, ...(metric === 'fat' ? styles.activeFatPill : {}) }}
-          onClick={() => setMetric('fat')}
-        >
-          <Disc size={12} style={{ marginRight: 4 }} /> Fat
-        </button>
-      </div>
-
-      {/* Summary insights bar */}
-      <div style={styles.summaryStatsCard}>
-        <div style={styles.statBox}>
-          <span style={styles.statLabel}>Daily Target</span>
-          <span style={styles.statVal}>{goalValue} {getMetricUnit()}</span>
-        </div>
-        <div style={styles.statDivider} />
-        <div style={styles.statBox}>
-          <span style={styles.statLabel}>Period Average</span>
-          <span style={{ ...styles.statVal, color: getMetricColor() }}>
-            {average} {getMetricUnit()}
-          </span>
-        </div>
-      </div>
-
-      {/* SVG Custom Line Chart Card */}
-      <div style={styles.chartCard}>
-        {loading ? (
-          <div style={styles.chartLoader}>
-            <div style={styles.spinner} />
-            <p style={{ marginTop: 12, color: 'var(--text-muted)', fontSize: '13px' }}>Loading historical data...</p>
+      <div className="analytics-grid" style={{ width: '100%' }}>
+        {/* Left Column: Controls and Stats */}
+        <div className="analytics-left-col" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+          {/* Timeframe selector tabs */}
+          <div style={styles.timeframeTabs}>
+            <button
+              style={{ ...styles.timeTab, ...(timeframe === 'week' ? styles.activeTimeTab : {}) }}
+              onClick={() => setTimeframe('week')}
+            >
+              Week
+            </button>
+            <button
+              style={{ ...styles.timeTab, ...(timeframe === 'month' ? styles.activeTimeTab : {}) }}
+              onClick={() => setTimeframe('month')}
+            >
+              Month
+            </button>
+            <button
+              style={{ ...styles.timeTab, ...(timeframe === 'year' ? styles.activeTimeTab : {}) }}
+              onClick={() => setTimeframe('year')}
+            >
+              Year
+            </button>
           </div>
-        ) : (
-          <div style={styles.chartWrapper}>
-            <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width="100%" height="100%">
-              {/* Gradients definitions locally just to be robust */}
-              <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={getMetricColor()} stopOpacity="0.25" />
-                  <stop offset="100%" stopColor={getMetricColor()} stopOpacity="0.0" />
-                </linearGradient>
-              </defs>
 
-              {/* Grid Lines */}
-              <line
-                x1={paddingX}
-                y1={chartHeight - paddingY}
-                x2={chartWidth - paddingX}
-                y2={chartHeight - paddingY}
-                stroke="var(--border-color)"
-                strokeWidth={1}
-              />
-              <line
-                x1={paddingX}
-                y1={paddingY}
-                x2={chartWidth - paddingX}
-                y2={paddingY}
-                stroke="rgba(39, 39, 42, 0.3)"
-                strokeDasharray="4 4"
-                strokeWidth={1}
-              />
+          {/* Metric selection pills */}
+          <div style={styles.metricRow}>
+            <button
+              style={{ ...styles.metricPill, ...(metric === 'calories' ? styles.activeCalPill : {}) }}
+              onClick={() => setMetric('calories')}
+            >
+              <Flame size={12} style={{ marginRight: 4 }} /> Calories
+            </button>
+            <button
+              style={{ ...styles.metricPill, ...(metric === 'water' ? styles.activeWaterPill : {}) }}
+              onClick={() => setMetric('water')}
+            >
+              <Droplet size={12} style={{ marginRight: 4 }} /> Water
+            </button>
+            <button
+              style={{ ...styles.metricPill, ...(metric === 'protein' ? styles.activeProtPill : {}) }}
+              onClick={() => setMetric('protein')}
+            >
+              <Dumbbell size={12} style={{ marginRight: 4 }} /> Protein
+            </button>
+            <button
+              style={{ ...styles.metricPill, ...(metric === 'carbs' ? styles.activeCarbPill : {}) }}
+              onClick={() => setMetric('carbs')}
+            >
+              <Egg size={12} style={{ marginRight: 4 }} /> Carbs
+            </button>
+            <button
+              style={{ ...styles.metricPill, ...(metric === 'fat' ? styles.activeFatPill : {}) }}
+              onClick={() => setMetric('fat')}
+            >
+              <Disc size={12} style={{ marginRight: 4 }} /> Fat
+            </button>
+          </div>
 
-              {/* Goal reference dashed line */}
-              {goalValue < maxVal && (
-                <g>
+          {/* Summary insights bar */}
+          <div style={styles.summaryStatsCard}>
+            <div style={styles.statBox}>
+              <span style={styles.statLabel}>Daily Target</span>
+              <span style={styles.statVal}>{goalValue} {getMetricUnit()}</span>
+            </div>
+            <div style={styles.statDivider} />
+            <div style={styles.statBox}>
+              <span style={styles.statLabel}>Period Average</span>
+              <span style={{ ...styles.statVal, color: getMetricColor() }}>
+                {average} {getMetricUnit()}
+              </span>
+            </div>
+          </div>
+
+          {/* Insight bullet details card */}
+          <div style={styles.chartDetailsCard}>
+            <h3 style={styles.detailsHeading}>Historical Trends</h3>
+            <p style={styles.detailsText}>
+              Your intake of <strong>{metric}</strong> averaged <strong>{average} {getMetricUnit()}</strong> per day over this {timeframe}. 
+              {average >= goalValue ? (
+                <span style={{ color: '#38ef7d' }}> You are meeting or exceeding your daily target on average!</span>
+              ) : (
+                <span style={{ color: '#ffd600' }}> You are averaging {Math.round((average / goalValue) * 100)}% of your target level.</span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Right Column: Chart representation */}
+        <div className="analytics-right-col" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+          {/* SVG Custom Line Chart Card */}
+          <div style={styles.chartCard}>
+            {loading ? (
+              <div style={styles.chartLoader}>
+                <div style={styles.spinner} />
+                <p style={{ marginTop: 12, color: 'var(--text-muted)', fontSize: '13px' }}>Loading historical data...</p>
+              </div>
+            ) : (
+              <div style={styles.chartWrapper}>
+                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width="100%" height="100%">
+                  {/* Gradients definitions locally just to be robust */}
+                  <defs>
+                    <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={getMetricColor()} stopOpacity="0.25" />
+                      <stop offset="100%" stopColor={getMetricColor()} stopOpacity="0.0" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Grid Lines */}
                   <line
                     x1={paddingX}
-                    y1={chartHeight - paddingY - (goalValue / maxVal) * (chartHeight - 2 * paddingY)}
+                    y1={chartHeight - paddingY}
                     x2={chartWidth - paddingX}
-                    y2={chartHeight - paddingY - (goalValue / maxVal) * (chartHeight - 2 * paddingY)}
-                    stroke="rgba(255, 255, 255, 0.15)"
-                    strokeWidth={1.5}
-                    strokeDasharray="5 5"
+                    y2={chartHeight - paddingY}
+                    stroke="var(--border-color)"
+                    strokeWidth={1}
                   />
-                  <text
-                    x={chartWidth - paddingX - 4}
-                    y={chartHeight - paddingY - (goalValue / maxVal) * (chartHeight - 2 * paddingY) - 5}
-                    fill="var(--text-muted)"
-                    fontSize="9px"
-                    textAnchor="end"
-                    fontWeight="600"
-                  >
-                    Target: {goalValue}
-                  </text>
-                </g>
-              )}
-
-              {/* Area filled path */}
-              {areaPath && <path d={areaPath} fill="url(#areaGrad)" />}
-
-              {/* Line path */}
-              {linePath && (
-                <path
-                  d={linePath}
-                  fill="none"
-                  stroke={getMetricColor()}
-                  strokeWidth={3}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              )}
-
-              {/* Data points & tooltips */}
-              {points.map((pt, i) => (
-                <g key={i}>
-                  {/* Point Circle */}
-                  <circle
-                    cx={pt.x}
-                    cy={pt.y}
-                    r={4}
-                    fill="var(--bg-card)"
-                    stroke={getMetricColor()}
-                    strokeWidth={2.5}
+                  <line
+                    x1={paddingX}
+                    y1={paddingY}
+                    x2={chartWidth - paddingX}
+                    y2={paddingY}
+                    stroke="rgba(39, 39, 42, 0.3)"
+                    strokeDasharray="4 4"
+                    strokeWidth={1}
                   />
 
-                  {/* Value Label on Top */}
-                  <text
-                    x={pt.x}
-                    y={pt.y - 10}
-                    fill="var(--text-primary)"
-                    fontSize="9px"
-                    textAnchor="middle"
-                    fontWeight="bold"
-                  >
-                    {pt.value}
-                  </text>
+                  {/* Goal reference dashed line */}
+                  {goalValue < maxVal && (
+                    <g>
+                      <line
+                        x1={paddingX}
+                        y1={chartHeight - paddingY - (goalValue / maxVal) * (chartHeight - 2 * paddingY)}
+                        x2={chartWidth - paddingX}
+                        y2={chartHeight - paddingY - (goalValue / maxVal) * (chartHeight - 2 * paddingY)}
+                        stroke="rgba(255, 255, 255, 0.15)"
+                        strokeWidth={1.5}
+                        strokeDasharray="5 5"
+                      />
+                      <text
+                        x={chartWidth - paddingX - 4}
+                        y={chartHeight - paddingY - (goalValue / maxVal) * (chartHeight - 2 * paddingY) - 5}
+                        fill="var(--text-muted)"
+                        fontSize="9px"
+                        textAnchor="end"
+                        fontWeight="600"
+                      >
+                        Target: {goalValue}
+                      </text>
+                    </g>
+                  )}
 
-                  {/* Date axis label */}
-                  <text
-                    x={pt.x}
-                    y={chartHeight - 8}
-                    fill="var(--text-muted)"
-                    fontSize="10px"
-                    textAnchor="middle"
-                    fontWeight="600"
-                  >
-                    {pt.label}
-                  </text>
-                </g>
-              ))}
-            </svg>
+                  {/* Area filled path */}
+                  {areaPath && <path d={areaPath} fill="url(#areaGrad)" />}
+
+                  {/* Line path */}
+                  {linePath && (
+                    <path
+                      d={linePath}
+                      fill="none"
+                      stroke={getMetricColor()}
+                      strokeWidth={3}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  )}
+
+                  {/* Data points & tooltips */}
+                  {points.map((pt, i) => (
+                    <g key={i}>
+                      {/* Point Circle */}
+                      <circle
+                        cx={pt.x}
+                        cy={pt.y}
+                        r={4}
+                        fill="var(--bg-card)"
+                        stroke={getMetricColor()}
+                        strokeWidth={2.5}
+                      />
+
+                      {/* Value Label on Top */}
+                      <text
+                        x={pt.x}
+                        y={pt.y - 10}
+                        fill="var(--text-primary)"
+                        fontSize="9px"
+                        textAnchor="middle"
+                        fontWeight="bold"
+                      >
+                        {pt.value}
+                      </text>
+
+                      {/* Date axis label */}
+                      <text
+                        x={pt.x}
+                        y={chartHeight - 8}
+                        fill="var(--text-muted)"
+                        fontSize="10px"
+                        textAnchor="middle"
+                        fontWeight="600"
+                      >
+                        {pt.label}
+                      </text>
+                    </g>
+                  ))}
+                </svg>
+              </div>
+            )}
           </div>
-        )}
-      </div>
-
-      {/* Insight bullet details card */}
-      <div style={styles.chartDetailsCard}>
-        <h3 style={styles.detailsHeading}>Historical Trends</h3>
-        <p style={styles.detailsText}>
-          Your intake of <strong>{metric}</strong> averaged <strong>{average} {getMetricUnit()}</strong> per day over this {timeframe}. 
-          {average >= goalValue ? (
-            <span style={{ color: '#38ef7d' }}> You are meeting or exceeding your daily target on average!</span>
-          ) : (
-            <span style={{ color: '#ffd600' }}> You are averaging {Math.round((average / goalValue) * 100)}% of your target level.</span>
-          )}
-        </p>
+        </div>
       </div>
     </div>
   );

@@ -127,25 +127,7 @@ export default function Dashboard({
   const isSupabaseConfigured = !!getSupabase();
 
   return (
-    <div className="animate-slide-up" style={styles.container}>
-      {/* Onboarding Setup Guide */}
-      {!isSupabaseConfigured && (
-        <div style={styles.onboardingCard}>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-            <Database size={20} style={{ color: '#cbf600', flexShrink: 0, marginTop: '2px' }} />
-            <div>
-              <h3 style={styles.onboardingTitle}>Setup Cloud Database</h3>
-              <p style={styles.onboardingText}>
-                Connect a free Supabase database to start logging food, uploading pictures, and backing up your nutrition metrics.
-              </p>
-              <button onClick={() => onNavigate('settings')} style={styles.onboardingBtn}>
-                Configure Setup <ChevronRight size={12} style={{ marginLeft: 4 }} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
+    <div className="animate-slide-up dashboard-grid" style={styles.container}>
       {/* Target Gradients definition for progress rings */}
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
@@ -173,7 +155,7 @@ export default function Dashboard({
       </svg>
 
       {/* Main Calories Circle Section */}
-      <div style={styles.mainRingCard}>
+      <div className="main-ring-card-responsive" style={styles.mainRingCard}>
         <ProgressRing size={170} stroke={12} percent={calPercent} gradientId="calGrad">
           <div style={styles.calorieTextContainer}>
             <Flame size={24} style={{ color: 'var(--color-cal)', marginBottom: 2 }} />
@@ -182,7 +164,7 @@ export default function Dashboard({
           </div>
         </ProgressRing>
 
-        <div style={styles.calSummaryDetails}>
+        <div className="main-ring-card-details-responsive" style={styles.calSummaryDetails}>
           {remainingCal >= 0 ? (
             <div style={styles.calStatusText}>
               <span style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff' }}>{Math.round(remainingCal)}</span>
@@ -299,6 +281,24 @@ export default function Dashboard({
         )}
       </div>
 
+      {/* Onboarding Setup Guide */}
+      {!isSupabaseConfigured && (
+        <div style={styles.onboardingCard}>
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+            <Database size={20} style={{ color: '#cbf600', flexShrink: 0, marginTop: '2px' }} />
+            <div>
+              <h3 style={styles.onboardingTitle}>Setup Cloud Database</h3>
+              <p style={styles.onboardingText}>
+                Connect a free Supabase database to start logging food, uploading pictures, and backing up your nutrition metrics.
+              </p>
+              <button onClick={() => onNavigate('settings')} style={styles.onboardingBtn}>
+                Configure Setup <ChevronRight size={12} style={{ marginLeft: 4 }} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* AI Insights Card */}
       <div style={styles.insightCard}>
         <div style={styles.insightHeader}>
@@ -336,9 +336,6 @@ export default function Dashboard({
 const styles = {
   container: {
     padding: '20px 16px',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    gap: '16px',
     paddingBottom: '100px',
   },
   mainRingCard: {
