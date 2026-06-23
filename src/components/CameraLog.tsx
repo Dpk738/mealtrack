@@ -45,7 +45,8 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
   const [sugar, setSugar] = useState(0);
   const [description, setDescription] = useState('');
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const galleryInputRef = useRef<HTMLInputElement>(null);
 
   // Check if API key exists on load
   useEffect(() => {
@@ -296,8 +297,12 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
     setErrorMsg('');
   };
 
-  const triggerUpload = () => {
-    fileInputRef.current?.click();
+  const triggerCamera = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const triggerGallery = () => {
+    galleryInputRef.current?.click();
   };
 
   return (
@@ -323,7 +328,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
       {/* Main Upload / Camera Triggers */}
       {!photo && !isWebcamActive && (
         <div className="upload-zone-wrapper" style={styles.uploadZoneContainer}>
-          <div style={styles.dropZone} onClick={triggerUpload}>
+          <div style={styles.dropZone} onClick={triggerCamera}>
             <div style={styles.iconRing} className="animate-pulse-glow">
               <Camera size={28} style={{ color: 'var(--text-primary)' }} />
             </div>
@@ -335,7 +340,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
             <button type="button" style={styles.altBtn} onClick={handleStartWebcam}>
               <Camera size={14} style={{ marginRight: 4 }} /> Live WebCam
             </button>
-            <button type="button" style={styles.altBtn} onClick={triggerUpload}>
+            <button type="button" style={styles.altBtn} onClick={triggerGallery}>
               <ImageIcon size={14} style={{ marginRight: 4 }} /> Gallery
             </button>
             <button type="button" style={styles.altBtn} onClick={handleManualInput}>
@@ -347,7 +352,14 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
             type="file"
             accept="image/*"
             capture="environment"
-            ref={fileInputRef}
+            ref={cameraInputRef}
+            onChange={handleFileChange}
+            className="hidden-file-input"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            ref={galleryInputRef}
             onChange={handleFileChange}
             className="hidden-file-input"
           />
