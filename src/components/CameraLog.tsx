@@ -26,6 +26,11 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
   const [hasApiKey, setHasApiKey] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   
+  // Webcam-specific States
+  const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
   // Form fields
   const [mealName, setMealName] = useState('');
   const [servingSize, setServingSize] = useState('1 portion');
@@ -47,6 +52,63 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
     }
     checkKey();
   }, []);
+
+  // Clean up media tracks when streaming state terminates
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  // Bind video element to media stream source
+  useEffect(() => {
+    if (isWebcamActive && videoRef.current && stream) {
+      videoRef.current.srcObject = stream;
+    }
+  }, [isWebcamActive, stream]);
+
+  const handleStartWebcam = async () => {
+    setErrorMsg('');
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment', width: { ideal: 1024 }, height: { ideal: 1024 } }
+      });
+      setStream(mediaStream);
+      setIsWebcamActive(true);
+    } catch (e: any) {
+      console.error('Error starting webcam:', e);
+      setErrorMsg('Failed to access camera. Please check camera permissions or try file upload.');
+    }
+  };
+
+  const handleStopWebcam = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsWebcamActive(false);
+  };
+
+  const handleCaptureWebcam = () => {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const dataUri = canvas.toDataURL('image/jpeg', 0.8);
+      setPhoto(dataUri);
+      setErrorMsg('');
+      handleStopWebcam();
+      analyzePhoto(dataUri);
+    }
+  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -200,22 +262,25 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
       )}
 
       {/* Main Upload / Camera Triggers */}
-      {!photo && (
+      {!photo && !isWebcamActive && (
         <div style={styles.uploadZoneContainer}>
           <div style={styles.dropZone} onClick={triggerUpload}>
             <div style={styles.iconRing} className="animate-pulse-glow">
               <Camera size={28} style={{ color: 'var(--text-primary)' }} />
             </div>
             <span style={styles.uploadTitle}>Capture Meal</span>
-            <span style={styles.uploadSub}>Take a photo using your phone camera or upload an image</span>
+            <span style={styles.uploadSub}>Use mobile system camera</span>
           </div>
 
-          <div style={styles.uploadAltRow}>
-            <button style={styles.altBtn} onClick={triggerUpload}>
-              <ImageIcon size={16} style={{ marginRight: 6 }} /> Choose from Gallery
+          <div style={styles.uploadAltRow3}>
+            <button type="button" style={styles.altBtn} onClick={handleStartWebcam}>
+              <Camera size={14} style={{ marginRight: 4 }} /> Live WebCam
             </button>
-            <button style={styles.altBtn} onClick={handleManualInput}>
-              Write Manually
+            <button type="button" style={styles.altBtn} onClick={triggerUpload}>
+              <ImageIcon size={14} style={{ marginRight: 4 }} /> Gallery
+            </button>
+            <button type="button" style={styles.altBtn} onClick={handleManualInput}>
+              Manual Log
             </button>
           </div>
           
@@ -227,6 +292,42 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
             onChange={handleFileChange}
             className="hidden-file-input"
           />
+        </div>
+      )}
+
+      {/* WebRTC Video Streaming View */}
+      {isWebcamActive && (
+        <div style={styles.scanContainer} className="animate-fade-in">
+          {errorMsg && (
+            <div style={styles.errorAlert}>
+              <AlertTriangle size={16} style={{ color: '#ff5e62', flexShrink: 0 }} />
+              <span style={{ fontSize: '12px' }}>{errorMsg}</span>
+            </div>
+          )}
+          
+          <div style={styles.scanCard}>
+            <video
+              ref={videoRef}
+              autoPlay
+              playsInline
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          </div>
+          
+          <div style={styles.loaderStatus}>
+            <span style={styles.loaderText}>Frame Your Food</span>
+            <p style={styles.loaderSub}>Align your meal, then tap the shutter button below</p>
+          </div>
+
+          <div style={styles.webcamActionRow}>
+            <button type="button" onClick={handleStopWebcam} style={styles.webcamCancelBtn}>
+              Cancel
+            </button>
+            <button type="button" onClick={handleCaptureWebcam} style={styles.shutterBtn}>
+              <div style={styles.shutterInner} />
+            </button>
+            <div style={{ width: '80px' }} /> {/* Spacing spacer offset */}
+          </div>
         </div>
       )}
 
@@ -659,5 +760,45 @@ const styles = {
     padding: '14px 0',
     fontSize: '14px',
     fontWeight: 600,
+  },
+  uploadAltRow3: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(3, 1fr)',
+    gap: '8px',
+  },
+  webcamActionRow: {
+    display: 'flex',
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
+    width: '100%',
+    marginTop: '10px',
+    padding: '0 20px',
+  },
+  webcamCancelBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-secondary)',
+    borderRadius: '12px',
+    padding: '12px 20px',
+    fontSize: '13px',
+    fontWeight: 600,
+  },
+  shutterBtn: {
+    width: '64px',
+    height: '64px',
+    borderRadius: '32px',
+    border: '3px solid #cbf600',
+    backgroundColor: 'transparent',
+    display: 'flex',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    padding: 0,
+    cursor: 'pointer',
+  },
+  shutterInner: {
+    width: '46px',
+    height: '46px',
+    borderRadius: '23px',
+    backgroundColor: '#ffffff',
   },
 };
