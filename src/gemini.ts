@@ -27,15 +27,18 @@ export interface DetectedNutrition {
   sugar: number;
 }
 
-export async function analyzeFoodImage(base64Image: string, apiKey: string): Promise<DetectedNutrition> {
-
+export async function analyzeFoodImage(
+  base64Image: string,
+  apiKey: string,
+  modelName: string = 'gemini-1.5-flash'
+): Promise<DetectedNutrition> {
   if (!apiKey) {
     throw new Error('Gemini API key is required. Please set it in Settings.');
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: modelName,
     generationConfig: {
       responseMimeType: 'application/json'
     }
@@ -99,14 +102,15 @@ export async function generateDailySummary(
     fat: number;
     water: number;
   },
-  apiKey: string
+  apiKey: string,
+  modelName: string = 'gemini-1.5-flash'
 ): Promise<string> {
   if (!apiKey) {
     return 'Please enter your Gemini API Key in Settings to generate AI insights.';
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: modelName });
 
   // Calculate totals
   const totalCalories = meals.reduce((sum, m) => sum + (m.calories * (m.servingQuantity || 1)), 0);

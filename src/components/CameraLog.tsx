@@ -167,12 +167,13 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
       setErrorMsg('No Gemini API Key found. Please add a key in Settings to use image analysis.');
       return;
     }
+    const modelName = await getSetting('geminiModel', 'gemini-1.5-flash');
 
     setLoading(true);
     setErrorMsg('');
 
     try {
-      const result = await analyzeFoodImage(base64Img, key);
+      const result = await analyzeFoodImage(base64Img, key, modelName);
       
       setMealName(result.name);
       setServingSize(result.servingSize);

@@ -13,6 +13,7 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
   const [carbGoal, setCarbGoal] = useState(230);
   const [fatGoal, setFatGoal] = useState(65);
   const [waterGoal, setWaterGoal] = useState(2500);
+  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
   const [loading, setLoading] = useState(true);
   const [savedMessage, setSavedMessage] = useState('');
 
@@ -24,6 +25,7 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
       const carb = await getSetting('goalCarbs', 230);
       const fat = await getSetting('goalFat', 65);
       const water = await getSetting('goalWater', 2500);
+      const model = await getSetting('geminiModel', 'gemini-1.5-flash');
 
       setApiKey(key);
       setCalorieGoal(cal);
@@ -31,6 +33,7 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
       setCarbGoal(carb);
       setFatGoal(fat);
       setWaterGoal(water);
+      setSelectedModel(model);
       setLoading(false);
     }
     loadSettings();
@@ -46,6 +49,7 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
     await setSetting('goalCarbs', Math.max(0, Number(carbGoal) || 230));
     await setSetting('goalFat', Math.max(0, Number(fatGoal) || 65));
     await setSetting('goalWater', Math.max(100, Number(waterGoal) || 2500));
+    await setSetting('geminiModel', selectedModel);
 
     setSavedMessage('Settings saved successfully!');
     onSettingsSaved();
@@ -98,6 +102,23 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
             />
             <small style={styles.helpText}>
               Don't have an API key? You can get a free one from Google AI Studio.
+            </small>
+          </div>
+
+          <div style={styles.inputGroup}>
+            <label style={styles.label}>Gemini AI Model</label>
+            <select
+              value={selectedModel}
+              onChange={(e) => setSelectedModel(e.target.value)}
+              style={styles.input}
+            >
+              <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard - Recommended)</option>
+              <option value="gemini-2.5-flash">Gemini 2.5 Flash (New / High Accuracy)</option>
+              <option value="gemini-2.0-flash">Gemini 2.0 Flash (Fast)</option>
+              <option value="gemini-1.5-pro">Gemini 1.5 Pro (Detailed Analysis)</option>
+            </select>
+            <small style={styles.helpText}>
+              If one model reports a "Not Found" error, try selecting a newer version (e.g. Gemini 2.5 Flash).
             </small>
           </div>
         </div>
