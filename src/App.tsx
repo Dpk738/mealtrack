@@ -9,11 +9,20 @@ import Settings from './components/Settings';
 import { Home, Camera, History as HistoryIcon, BarChart2, Settings as SettingsIcon } from 'lucide-react';
 import './App.css';
 
+// Get current date string formatted as YYYY-MM-DD
+const getTodayDateString = () => {
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 type Tab = 'dashboard' | 'camera' | 'history' | 'analytics' | 'settings';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString());
   const [meals, setMeals] = useState<Meal[]>([]);
   const [waterLogs, setWaterLogs] = useState<WaterLog[]>([]);
   const [goals, setGoals] = useState({
@@ -23,15 +32,6 @@ export default function App() {
     fat: 65,
     water: 2500,
   });
-
-  // Get current date string formatted as YYYY-MM-DD
-  const getTodayDateString = () => {
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, '0');
-    const dd = String(today.getDate()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}`;
-  };
 
   // Bootstrap initial configurations on mount
   useEffect(() => {
@@ -199,6 +199,17 @@ export default function App() {
     loadDayData();
   };
 
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+      const date = new Date(dateStr + 'T00:00:00');
+      if (isNaN(date.getTime())) return '';
+      return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    } catch {
+      return '';
+    }
+  };
+
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
@@ -244,7 +255,7 @@ export default function App() {
       <header style={styles.header}>
         <h1 style={styles.logo}>NutriTrack</h1>
         <span style={styles.dateDisplay}>
-          {new Date(selectedDate + 'T00:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}
+          {formatDateDisplay(selectedDate)}
         </span>
       </header>
 

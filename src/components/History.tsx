@@ -34,7 +34,7 @@ export default function History({
 
   // Navigate date
   const changeDateByAmount = (days: number) => {
-    const d = new Date(selectedDate);
+    const d = new Date(selectedDate + 'T12:00:00');
     d.setDate(d.getDate() + days);
     const yyyy = d.getFullYear();
     const mm = String(d.getMonth() + 1).padStart(2, '0');
