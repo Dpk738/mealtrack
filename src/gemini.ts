@@ -58,14 +58,14 @@ Return a JSON object in this exact format:
   "fat": 8,
   "fiber": 3,
   "sugar": 5,
-  "description": "Brief one sentence individual item portion and calorie breakdown (e.g., '2 idlis have 60 kcal, chutney of approx 20g has 30 kcal and sambar of 20 ml has 40 kcal.')"
+  "description": "Brief one sentence individual item portion and calorie breakdown in this exact format: '[Item1] of [weight] grams has [calories] calories and [Item2] with [weight] grams has [calories] calories' (e.g., 'Puri of 20 grams has 70 calories and chutney with 15 grams has 40 calories')."
 }
 Notes:
 - Provide estimates for the food shown.
 - All macronutrients (protein, carbs, fat, fiber, sugar) should be numbers representing grams (g).
 - Calories should be a number representing kcal.
 - Be as accurate as possible for the identified food items.
-- Write the description in a single clear sentence.
+- Write the description strictly in a single clear sentence containing each item, its estimated weight in grams, and its estimated calories, following the provided example format exactly.
 `;
 
   try {
