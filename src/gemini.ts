@@ -35,7 +35,7 @@ export async function analyzeFoodImage(base64Image: string, apiKey: string): Pro
 
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
-    model: 'gemini-3.5-flash',
+    model: 'gemini-1.5-flash',
     generationConfig: {
       responseMimeType: 'application/json'
     }
@@ -106,7 +106,7 @@ export async function generateDailySummary(
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
   // Calculate totals
   const totalCalories = meals.reduce((sum, m) => sum + (m.calories * (m.servingQuantity || 1)), 0);
