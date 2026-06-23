@@ -34,12 +34,15 @@ export async function analyzeFoodImage(base64Image: string, apiKey: string): Pro
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
-    generationConfig: {
-      responseMimeType: 'application/json'
-    }
-  });
+  const model = genAI.getGenerativeModel(
+    {
+      model: 'gemini-1.5-flash',
+      generationConfig: {
+        responseMimeType: 'application/json'
+      }
+    },
+    { apiVersion: 'v1' }
+  );
 
   const prompt = `
 Analyze the food visible in this image. Estimate the nutrition details for all items combined.
@@ -106,7 +109,10 @@ export async function generateDailySummary(
   }
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel(
+    { model: 'gemini-1.5-flash' },
+    { apiVersion: 'v1' }
+  );
 
   // Calculate totals
   const totalCalories = meals.reduce((sum, m) => sum + (m.calories * (m.servingQuantity || 1)), 0);
