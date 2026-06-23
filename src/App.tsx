@@ -6,6 +6,7 @@ import CameraLog from './components/CameraLog';
 import History from './components/History';
 import Analytics from './components/Analytics';
 import Settings from './components/Settings';
+import Auth from './components/Auth';
 import { Home, Camera, History as HistoryIcon, BarChart2, Settings as SettingsIcon } from 'lucide-react';
 import './App.css';
 
@@ -63,6 +64,31 @@ export default function App() {
     };
   }, [activeTab]);
 
+  const [session, setSession] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const isSupabaseConfigured = getSupabase() !== null;
+
+  // Supabase Auth Session listener
+  useEffect(() => {
+    const supabase = getSupabase();
+    if (!supabase) {
+      setAuthLoading(false);
+      return;
+    }
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      setAuthLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Bootstrap initial configurations on mount
   useEffect(() => {
     function bootstrap() {
@@ -84,11 +110,55 @@ export default function App() {
     bootstrap();
   }, []);
 
-  // Reload meals and water logs whenever active date or tab changes
+  // Load goals and API key from Supabase profiles table on sign in
+  useEffect(() => {
+    if (!session?.user?.id) {
+      refreshGoals();
+      return;
+    }
+
+    const loadProfile = async () => {
+      const supabase = getSupabase();
+      if (!supabase) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.log('Profile fetch error (possibly new user):', error.message);
+          return;
+        }
+
+        if (data) {
+          setGoals({
+            calories: Number(data.goal_calories) || 2000,
+            protein: Number(data.goal_protein) || 130,
+            carbs: Number(data.goal_carbs) || 230,
+            fat: Number(data.goal_fat) || 65,
+            water: Number(data.goal_water) || 2500,
+          });
+          
+          if (data.gemini_api_key) {
+            localStorage.setItem('geminiApiKey', data.gemini_api_key);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    };
+
+    loadProfile();
+  }, [session]);
+
+  // Reload meals and water logs whenever active date, tab or user changes
   useEffect(() => {
     if (!selectedDate) return;
     loadDayData();
-  }, [selectedDate, activeTab]);
+  }, [selectedDate, activeTab, session]);
 
   const loadDayData = async () => {
     const supabase = getSupabase();
@@ -99,18 +169,23 @@ export default function App() {
     }
 
     try {
-      const { data: dayMeals, error: mealsErr } = await supabase
-        .from('meals')
-        .select('*')
-        .eq('date', selectedDate);
+      let mealsQuery = supabase.from('meals').select('*').eq('date', selectedDate);
+      let waterQuery = supabase.from('water').select('*').eq('date', selectedDate);
 
+      // Filter by current authenticated user
+      if (session?.user?.id) {
+        mealsQuery = mealsQuery.eq('user_id', session.user.id);
+        waterQuery = waterQuery.eq('user_id', session.user.id);
+      } else {
+        // Fallback or empty if not logged in (to satisfy RLS)
+        mealsQuery = mealsQuery.is('user_id', null);
+        waterQuery = waterQuery.is('user_id', null);
+      }
+
+      const { data: dayMeals, error: mealsErr } = await mealsQuery;
       if (mealsErr) console.error('Meals query error:', mealsErr);
 
-      const { data: dayWater, error: waterErr } = await supabase
-        .from('water')
-        .select('*')
-        .eq('date', selectedDate);
-
+      const { data: dayWater, error: waterErr } = await waterQuery;
       if (waterErr) console.error('Water query error:', waterErr);
 
       setMeals(dayMeals || []);
@@ -146,7 +221,8 @@ export default function App() {
     const newLog = {
       date: selectedDate,
       timestamp: new Date().toISOString(),
-      amount
+      amount,
+      user_id: session?.user?.id || null
     };
 
     try {
@@ -165,7 +241,8 @@ export default function App() {
     const newMeal = {
       ...mealData,
       date: selectedDate,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      user_id: session?.user?.id || null
     };
 
     try {
@@ -184,7 +261,7 @@ export default function App() {
     if (!supabase) return;
 
     try {
-      const { error } = await supabase
+      let query = supabase
         .from('meals')
         .update({
           name: updatedMeal.name,
@@ -200,6 +277,11 @@ export default function App() {
         })
         .eq('id', updatedMeal.id);
 
+      if (session?.user?.id) {
+        query = query.eq('user_id', session.user.id);
+      }
+
+      const { error } = await query;
       if (error) console.error('Update meal error:', error);
       await loadDayData();
     } catch (e) {
@@ -212,11 +294,16 @@ export default function App() {
     if (!supabase) return;
 
     try {
-      const { error } = await supabase
+      let query = supabase
         .from('meals')
         .delete()
         .eq('id', id);
 
+      if (session?.user?.id) {
+        query = query.eq('user_id', session.user.id);
+      }
+
+      const { error } = await query;
       if (error) console.error('Delete meal error:', error);
       await loadDayData();
     } catch (e) {
@@ -226,6 +313,17 @@ export default function App() {
 
   const handleSettingsSaved = () => {
     refreshGoals();
+    // Re-initialize session listener since Supabase instance has changed
+    const supabase = getSupabase();
+    if (supabase) {
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        setSession(session);
+        setAuthLoading(false);
+      });
+    } else {
+      setSession(null);
+      setAuthLoading(false);
+    }
     loadDayData();
   };
 
@@ -278,6 +376,29 @@ export default function App() {
         return null;
     }
   };
+
+  if (isSupabaseConfigured && authLoading) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        backgroundColor: '#030303',
+        gap: '16px'
+      }}>
+        <div className="animate-spin-loader"></div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500 }}>
+          Connecting securely...
+        </div>
+      </div>
+    );
+  }
+
+  if (isSupabaseConfigured && !session) {
+    return <Auth />;
+  }
 
   return (
     <div className="app-main-layout">

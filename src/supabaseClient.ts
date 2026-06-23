@@ -31,8 +31,8 @@ let supabaseInstance: SupabaseClient | null = null;
 export function getSupabase(): SupabaseClient | null {
   if (supabaseInstance) return supabaseInstance;
 
-  const url = localStorage.getItem('supabaseUrl') || '';
-  const key = localStorage.getItem('supabaseAnonKey') || '';
+  const url = (import.meta.env?.VITE_SUPABASE_URL || localStorage.getItem('supabaseUrl') || '').trim();
+  const key = (import.meta.env?.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabaseAnonKey') || '').trim();
 
   if (!url || !key) {
     return null;
@@ -48,12 +48,15 @@ export function getSupabase(): SupabaseClient | null {
 }
 
 export function resetSupabaseInstance(url: string, key: string): SupabaseClient | null {
-  if (!url || !key) {
+  const finalUrl = url.trim() || import.meta.env?.VITE_SUPABASE_URL || '';
+  const finalKey = key.trim() || import.meta.env?.VITE_SUPABASE_ANON_KEY || '';
+
+  if (!finalUrl || !finalKey) {
     supabaseInstance = null;
     return null;
   }
   try {
-    supabaseInstance = createClient(url, key);
+    supabaseInstance = createClient(finalUrl, finalKey);
     return supabaseInstance;
   } catch (e) {
     console.error('Error resetting Supabase client:', e);

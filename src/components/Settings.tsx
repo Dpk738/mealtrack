@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { resetSupabaseInstance, testSupabaseConnection } from '../supabaseClient';
+import { resetSupabaseInstance, testSupabaseConnection, getSupabase } from '../supabaseClient';
 import { Save, Key, Database, Link2, Copy, Check } from 'lucide-react';
 
 interface SettingsProps {
@@ -25,6 +25,7 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
   const [testingConnection, setTestingConnection] = useState(false);
   const [savedMessage, setSavedMessage] = useState('');
   const [copiedSql, setCopiedSql] = useState(false);
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
     // Load config from localStorage
@@ -38,6 +39,15 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
     setCarbGoal(Number(localStorage.getItem('goalCarbs')) || 230);
     setFatGoal(Number(localStorage.getItem('goalFat')) || 65);
     setWaterGoal(Number(localStorage.getItem('goalWater')) || 2500);
+
+    const checkUser = async () => {
+      const supabase = getSupabase();
+      if (supabase) {
+        const { data: { user } } = await supabase.auth.getUser();
+        setUser(user);
+      }
+    };
+    checkUser();
   }, []);
 
   const handleTestConnection = async () => {
@@ -60,20 +70,53 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
     e.preventDefault();
     setSavedMessage('');
 
-    // Save to localStorage
+    // Save to localStorage (as cache/fallback)
     localStorage.setItem('supabaseUrl', supabaseUrl.trim());
     localStorage.setItem('supabaseAnonKey', supabaseAnonKey.trim());
     localStorage.setItem('geminiApiKey', apiKey.trim());
     localStorage.setItem('geminiModel', selectedModel);
 
-    localStorage.setItem('goalCalories', String(Math.max(100, Number(calorieGoal) || 2000)));
-    localStorage.setItem('goalProtein', String(Math.max(0, Number(proteinGoal) || 130)));
-    localStorage.setItem('goalCarbs', String(Math.max(0, Number(carbGoal) || 230)));
-    localStorage.setItem('goalFat', String(Math.max(0, Number(fatGoal) || 65)));
-    localStorage.setItem('goalWater', String(Math.max(100, Number(waterGoal) || 2500)));
+    const goalCals = Math.max(100, Number(calorieGoal) || 2000);
+    const goalProt = Math.max(0, Number(proteinGoal) || 130);
+    const goalCarbs = Math.max(0, Number(carbGoal) || 230);
+    const goalFat = Math.max(0, Number(fatGoal) || 65);
+    const goalWater = Math.max(100, Number(waterGoal) || 2500);
+
+    localStorage.setItem('goalCalories', String(goalCals));
+    localStorage.setItem('goalProtein', String(goalProt));
+    localStorage.setItem('goalCarbs', String(goalCarbs));
+    localStorage.setItem('goalFat', String(goalFat));
+    localStorage.setItem('goalWater', String(goalWater));
 
     // Reset supabase client instance singleton
     resetSupabaseInstance(supabaseUrl.trim(), supabaseAnonKey.trim());
+
+    // Save user profile details to Supabase if logged in
+    const supabase = getSupabase();
+    if (supabase) {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { error } = await supabase
+            .from('profiles')
+            .upsert({
+              id: user.id,
+              gemini_api_key: apiKey.trim(),
+              goal_calories: goalCals,
+              goal_protein: goalProt,
+              goal_carbs: goalCarbs,
+              goal_fat: goalFat,
+              goal_water: goalWater,
+              updated_at: new Date().toISOString()
+            });
+          if (error) {
+            console.error('Error saving profile to Supabase:', error);
+          }
+        }
+      } catch (err) {
+        console.error('Error writing user profile:', err);
+      }
+    }
 
     setSavedMessage('Configuration saved successfully!');
     onSettingsSaved();
@@ -83,12 +126,44 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
     }, 3000);
   };
 
+  const handleLogout = async () => {
+    const supabase = getSupabase();
+    if (!supabase) return;
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) console.error('Sign out error:', error);
+      setUser(null);
+      onSettingsSaved(); // Refresh App state
+    } catch (e) {
+      console.error('Error signing out:', e);
+    }
+  };
+
   const sqlSchema = `-- Run this in your Supabase SQL Editor:
 
--- 1. Create meals table
+-- 1. Create profiles table (holds goals and Gemini API keys securely)
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  updated_at timestamp with time zone DEFAULT timezone('utc'::text, now()),
+  gemini_api_key text,
+  goal_calories numeric DEFAULT 2000 NOT NULL,
+  goal_protein numeric DEFAULT 130 NOT NULL,
+  goal_carbs numeric DEFAULT 230 NOT NULL,
+  goal_fat numeric DEFAULT 65 NOT NULL,
+  goal_water numeric DEFAULT 2500 NOT NULL
+);
+
+-- Enable RLS for profiles
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow individual read" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Allow individual insert" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Allow individual update" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+-- 2. Create meals table with user_id
 CREATE TABLE IF NOT EXISTS public.meals (
   id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   date text NOT NULL,
   timestamp timestamp with time zone NOT NULL,
   name text NOT NULL,
@@ -104,28 +179,43 @@ CREATE TABLE IF NOT EXISTS public.meals (
   description text
 );
 
--- 2. Create water table
+-- 3. Create water table with user_id
 CREATE TABLE IF NOT EXISTS public.water (
   id bigint GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
   created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   date text NOT NULL,
   timestamp timestamp with time zone NOT NULL,
   amount numeric DEFAULT 0 NOT NULL
 );
 
--- 3. Enable RLS Policies for Anon access
+-- Enable RLS Policies for user isolation
 ALTER TABLE public.meals ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.water ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow public read" ON public.meals FOR SELECT USING (true);
-CREATE POLICY "Allow public insert" ON public.meals FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update" ON public.meals FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete" ON public.meals FOR DELETE USING (true);
+CREATE POLICY "Allow user read meals" ON public.meals FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Allow user insert meals" ON public.meals FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow user update meals" ON public.meals FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Allow user delete meals" ON public.meals FOR DELETE USING (auth.uid() = user_id);
 
-CREATE POLICY "Allow public read water" ON public.water FOR SELECT USING (true);
-CREATE POLICY "Allow public insert water" ON public.water FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public update water" ON public.water FOR UPDATE USING (true);
-CREATE POLICY "Allow public delete water" ON public.water FOR DELETE USING (true);`;
+CREATE POLICY "Allow user read water" ON public.water FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Allow user insert water" ON public.water FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow user update water" ON public.water FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Allow user delete water" ON public.water FOR DELETE USING (auth.uid() = user_id);
+
+-- 4. Set up auto-profile creation trigger on user signup
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, gemini_api_key, goal_calories, goal_protein, goal_carbs, goal_fat, goal_water)
+  VALUES (new.id, '', 2000, 130, 230, 65, 2500);
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();`;
 
   const handleCopySql = () => {
     navigator.clipboard.writeText(sqlSchema);
@@ -135,7 +225,30 @@ CREATE POLICY "Allow public delete water" ON public.water FOR DELETE USING (true
 
   return (
     <div className="animate-slide-up" style={styles.container}>
-      <h2 style={styles.title}>Setup & Goals</h2>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', width: '100%', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '8px' }}>
+        <h2 style={styles.title}>Setup & Goals</h2>
+        {user && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Logged in as <strong style={{ color: '#ffffff' }}>{user.email}</strong></span>
+            <button
+              type="button"
+              onClick={handleLogout}
+              style={{
+                backgroundColor: 'rgba(255, 94, 98, 0.1)',
+                border: '1px solid rgba(255, 94, 98, 0.25)',
+                color: '#ff5e62',
+                borderRadius: '8px',
+                padding: '4px 10px',
+                fontSize: '12px',
+                fontWeight: 600,
+                cursor: 'pointer'
+              }}
+            >
+              Log Out
+            </button>
+          </div>
+        )}
+      </div>
       
       <div className="settings-grid" style={{ width: '100%' }}>
         {/* Left Column: Form Settings */}
