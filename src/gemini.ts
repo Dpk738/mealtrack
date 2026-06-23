@@ -36,6 +36,43 @@ export async function analyzeFoodImage(
     throw new Error('Gemini API key is required. Please set it in Settings.');
   }
 
+  // Try proxy first to bypass EU/EEA region locks on the free tier
+  try {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: base64Image,
+        apiKey,
+        modelName,
+        type: 'vision',
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const parsed = JSON.parse(data.text);
+      return {
+        name: parsed.name || 'Detected Meal',
+        servingSize: parsed.servingSize || '1 portion',
+        servingQuantity: Number(parsed.servingQuantity) || 1,
+        calories: Math.max(0, Math.round(Number(parsed.calories) || 0)),
+        protein: Math.max(0, Math.round((Number(parsed.protein) || 0) * 10) / 10),
+        carbs: Math.max(0, Math.round((Number(parsed.carbs) || 0) * 10) / 10),
+        fat: Math.max(0, Math.round((Number(parsed.fat) || 0) * 10) / 10),
+        fiber: Math.max(0, Math.round((Number(parsed.fiber) || 0) * 10) / 10),
+        sugar: Math.max(0, Math.round((Number(parsed.sugar) || 0) * 10) / 10),
+      };
+    } else {
+      console.warn('Vercel proxy analysis failed, trying direct browser fallback...');
+    }
+  } catch (e) {
+    console.warn('Vercel proxy unreachable, using direct browser-to-Gemini connection:', e);
+  }
+
+  // Direct client-side SDK Fallback
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({
     model: modelName,
@@ -109,16 +146,43 @@ export async function generateDailySummary(
     return 'Please enter your Gemini API Key in Settings to generate AI insights.';
   }
 
+  const totalCalories = meals.reduce((sum, m) => sum + (m.calories * (m.servingQuantity || 1)), 0);
+  const totalWater = waterLogs.reduce((sum, w) => sum + w.amount, 0);
+
+  // Try proxy first to bypass EU/EEA region locks on the free tier
+  try {
+    const response = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        apiKey,
+        modelName,
+        type: 'summary',
+        meals,
+        waterLogs,
+        goals,
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      return data.text ? data.text.trim() : 'Unable to generate summary.';
+    } else {
+      console.warn('Vercel proxy summary failed, trying direct browser fallback...');
+    }
+  } catch (e) {
+    console.warn('Vercel proxy unreachable, using direct browser-to-Gemini connection:', e);
+  }
+
+  // Direct client-side SDK Fallback
   const genAI = new GoogleGenerativeAI(apiKey);
   const model = genAI.getGenerativeModel({ model: modelName });
 
-  // Calculate totals
-  const totalCalories = meals.reduce((sum, m) => sum + (m.calories * (m.servingQuantity || 1)), 0);
   const totalProtein = meals.reduce((sum, m) => sum + (m.protein * (m.servingQuantity || 1)), 0);
   const totalCarbs = meals.reduce((sum, m) => sum + (m.carbs * (m.servingQuantity || 1)), 0);
   const totalFat = meals.reduce((sum, m) => sum + (m.fat * (m.servingQuantity || 1)), 0);
-  const totalWater = waterLogs.reduce((sum, w) => sum + w.amount, 0);
-
   const mealSummaries = meals.map(m => `- ${m.name}: ${m.calories} kcal, P: ${m.protein}g, C: ${m.carbs}g, F: ${m.fat}g (Qty: ${m.servingQuantity})`).join('\n');
 
   const prompt = `
