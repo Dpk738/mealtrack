@@ -7,6 +7,7 @@ import History from './components/History';
 import Analytics from './components/Analytics';
 import Settings from './components/Settings';
 import Auth from './components/Auth';
+import DbSetup from './components/DbSetup';
 import { Home, Camera, History as HistoryIcon, BarChart2, Settings as SettingsIcon } from 'lucide-react';
 import './App.css';
 
@@ -64,18 +65,20 @@ export default function App() {
     };
   }, [activeTab]);
 
+  const [dbConnected, setDbConnected] = useState<boolean>(getSupabase() !== null);
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
-  const isSupabaseConfigured = getSupabase() !== null;
 
   // Supabase Auth Session listener
   useEffect(() => {
     const supabase = getSupabase();
     if (!supabase) {
       setAuthLoading(false);
+      setSession(null);
       return;
     }
 
+    setAuthLoading(true);
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setAuthLoading(false);
@@ -87,7 +90,7 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [dbConnected]);
 
   // Bootstrap initial configurations on mount
   useEffect(() => {
@@ -312,10 +315,13 @@ export default function App() {
   };
 
   const handleSettingsSaved = () => {
+    const connected = getSupabase() !== null;
+    setDbConnected(connected);
     refreshGoals();
     // Re-initialize session listener since Supabase instance has changed
     const supabase = getSupabase();
     if (supabase) {
+      setAuthLoading(true);
       supabase.auth.getSession().then(({ data: { session } }) => {
         setSession(session);
         setAuthLoading(false);
@@ -377,7 +383,11 @@ export default function App() {
     }
   };
 
-  if (isSupabaseConfigured && authLoading) {
+  if (!dbConnected) {
+    return <DbSetup onSuccess={() => setDbConnected(true)} />;
+  }
+
+  if (authLoading) {
     return (
       <div style={{
         display: 'flex',
@@ -396,7 +406,7 @@ export default function App() {
     );
   }
 
-  if (isSupabaseConfigured && !session) {
+  if (!session) {
     return <Auth />;
   }
 

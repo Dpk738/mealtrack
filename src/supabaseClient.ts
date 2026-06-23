@@ -31,8 +31,16 @@ let supabaseInstance: SupabaseClient | null = null;
 export function getSupabase(): SupabaseClient | null {
   if (supabaseInstance) return supabaseInstance;
 
-  const url = (import.meta.env?.VITE_SUPABASE_URL || localStorage.getItem('supabaseUrl') || '').trim();
-  const key = (import.meta.env?.VITE_SUPABASE_ANON_KEY || localStorage.getItem('supabaseAnonKey') || '').trim();
+  let url = (import.meta.env?.VITE_SUPABASE_URL || '').trim();
+  let key = (import.meta.env?.VITE_SUPABASE_ANON_KEY || '').trim();
+
+  // If environment variables are empty or contain default placeholders, fall back to localStorage
+  if (!url || url.includes('your-project-id.supabase.co')) {
+    url = (localStorage.getItem('supabaseUrl') || '').trim();
+  }
+  if (!key || key === 'your-anon-public-key') {
+    key = (localStorage.getItem('supabaseAnonKey') || '').trim();
+  }
 
   if (!url || !key) {
     return null;
