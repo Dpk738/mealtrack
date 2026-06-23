@@ -11,28 +11,9 @@ import './App.css';
 
 type Tab = 'dashboard' | 'camera' | 'history' | 'analytics' | 'settings';
 
-const getTodayDateString = () => {
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  return `${yyyy}-${mm}-${dd}`;
-};
-
-const formatHeaderDate = (dateStr: string) => {
-  if (!dateStr) return '';
-  const parts = dateStr.split('-');
-  if (parts.length !== 3) return '';
-  return new Date(
-    parseInt(parts[0], 10),
-    parseInt(parts[1], 10) - 1,
-    parseInt(parts[2], 10)
-  ).toLocaleDateString([], { month: 'short', day: 'numeric' });
-};
-
 export default function App() {
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
-  const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString());
+  const [selectedDate, setSelectedDate] = useState<string>('');
   const [meals, setMeals] = useState<Meal[]>([]);
   const [waterLogs, setWaterLogs] = useState<WaterLog[]>([]);
   const [goals, setGoals] = useState({
@@ -42,6 +23,15 @@ export default function App() {
     fat: 65,
     water: 2500,
   });
+
+  // Get current date string formatted as YYYY-MM-DD
+  const getTodayDateString = () => {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const dd = String(today.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  };
 
   // Bootstrap initial configurations on mount
   useEffect(() => {
@@ -178,7 +168,7 @@ export default function App() {
       <header style={styles.header}>
         <h1 style={styles.logo}>NutriTrack</h1>
         <span style={styles.dateDisplay}>
-          {formatHeaderDate(selectedDate)}
+          {new Date(selectedDate + 'T00:00:00').toLocaleDateString([], { month: 'short', day: 'numeric' })}
         </span>
       </header>
 
