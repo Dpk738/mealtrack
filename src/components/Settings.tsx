@@ -13,7 +13,7 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
   const [carbGoal, setCarbGoal] = useState(230);
   const [fatGoal, setFatGoal] = useState(65);
   const [waterGoal, setWaterGoal] = useState(2500);
-  const [selectedModel, setSelectedModel] = useState('gemini-1.5-flash');
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash');
   const [loading, setLoading] = useState(true);
   const [savedMessage, setSavedMessage] = useState('');
 
@@ -25,7 +25,7 @@ export default function Settings({ onSettingsSaved }: SettingsProps) {
       const carb = await getSetting('goalCarbs', 230);
       const fat = await getSetting('goalFat', 65);
       const water = await getSetting('goalWater', 2500);
-      const model = await getSetting('geminiModel', 'gemini-1.5-flash');
+      const model = await getSetting('geminiModel', 'gemini-2.5-flash');
 
       setApiKey(key);
       setCalorieGoal(cal);

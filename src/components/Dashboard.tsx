@@ -61,7 +61,7 @@ export default function Dashboard({
     setLoadingInsight(true);
     try {
       const apiKey = await getSetting('geminiApiKey', '');
-      const modelName = await getSetting('geminiModel', 'gemini-1.5-flash');
+      const modelName = await getSetting('geminiModel', 'gemini-2.5-flash');
       const response = await generateDailySummary(meals, waterLogs, goals, apiKey, modelName);
       setInsight(response);
       localStorage.setItem(`insight_${selectedDate}`, response);
