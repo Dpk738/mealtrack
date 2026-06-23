@@ -358,7 +358,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
           />
           <input
             type="file"
-            accept="image/*"
+            accept="image/png, image/jpeg, image/jpg, image/webp"
             ref={galleryInputRef}
             onChange={handleFileChange}
             className="hidden-file-input"
