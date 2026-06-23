@@ -1,0 +1,174 @@
+/* Custom Reset & Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: dark;
+  background-color: #030303;
+
+  /* Colors */
+  --bg-dark: #050505;
+  --bg-card: #0c0c0e;
+  --bg-card-hover: #121215;
+  --border-color: #1a1a1f;
+  --text-primary: #ffffff;
+  --text-secondary: #e4e4e7;
+  --text-muted: #71717a;
+  
+  /* Gradients */
+  --grad-cal: linear-gradient(135deg, #ffffff, #cbf600);
+  --grad-protein: linear-gradient(135deg, #ffffff, #a1a1aa);
+  --grad-carbs: linear-gradient(135deg, #cbf600, #ffffff);
+  --grad-fat: linear-gradient(135deg, #ffffff, #cbf600);
+  --grad-water: linear-gradient(135deg, #cbf600, #ffffff);
+  --grad-dark: linear-gradient(180deg, #0c0c0e, #050505);
+
+  /* Ring Colors */
+  --color-cal: #cbf600;
+  --color-protein: #ffffff;
+  --color-carbs: #cbf600;
+  --color-fat: #ffffff;
+  --color-water: #cbf600;
+}
+
+html, body {
+  background-color: #030303;
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  overflow-x: hidden;
+}
+
+#root {
+  width: 100%;
+  max-width: 480px;
+  min-height: 100vh;
+  background-color: var(--bg-dark);
+  border-left: 1px solid var(--border-color);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.9);
+  position: relative;
+}
+
+/* Scrollbar Customization */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+    text-shadow: 0 0 10px rgba(0, 242, 254, 0.4);
+  }
+}
+
+@keyframes scan {
+  0% {
+    top: 0%;
+  }
+  50% {
+    top: 100%;
+  }
+  100% {
+    top: 0%;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Common Classes */
+.animate-pulse-glow {
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+/* Form inputs & general interactive items styles */
+input, select, textarea {
+  background-color: var(--bg-dark);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: var(--text-muted);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.1s, opacity 0.2s;
+}
+
+button:active {
+  transform: scale(0.97);
+}
+
+/* Hides default file inputs nicely */
+.hidden-file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
