@@ -45,8 +45,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
   const [sugar, setSugar] = useState(0);
   const [description, setDescription] = useState('');
 
-  const cameraInputRef = useRef<HTMLInputElement>(null);
-  const galleryInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if API key exists on load
   useEffect(() => {
@@ -298,11 +297,21 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
   };
 
   const triggerCamera = () => {
-    cameraInputRef.current?.click();
+    const input = fileInputRef.current;
+    if (input) {
+      input.setAttribute('capture', 'environment');
+      input.setAttribute('accept', 'image/*');
+      input.click();
+    }
   };
 
   const triggerGallery = () => {
-    galleryInputRef.current?.click();
+    const input = fileInputRef.current;
+    if (input) {
+      input.removeAttribute('capture');
+      input.setAttribute('accept', 'image/png, image/jpeg, image/jpg, image/webp');
+      input.click();
+    }
   };
 
   return (
@@ -350,16 +359,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
           
           <input
             type="file"
-            accept="image/*"
-            capture="environment"
-            ref={cameraInputRef}
-            onChange={handleFileChange}
-            className="hidden-file-input"
-          />
-          <input
-            type="file"
-            accept="image/png, image/jpeg, image/jpg, image/webp"
-            ref={galleryInputRef}
+            ref={fileInputRef}
             onChange={handleFileChange}
             className="hidden-file-input"
           />
