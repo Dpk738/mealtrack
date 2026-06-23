@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getSupabase } from './supabaseClient';
 import type { Meal, WaterLog } from './supabaseClient';
 import Dashboard from './components/Dashboard';
@@ -32,6 +32,36 @@ export default function App() {
     fat: 65,
     water: 2500,
   });
+
+  const mainRef = useRef<HTMLElement>(null);
+
+  // Force scroll reset on mount and whenever tab changes
+  useEffect(() => {
+    // Prevent the browser from trying to restore scroll positions on reload (helps with dynamic content offset issues)
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+
+    const resetScroll = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      if (mainRef.current) {
+        mainRef.current.scrollTop = 0;
+      }
+    };
+
+    resetScroll();
+
+    // Re-check after rendering has completed to handle any layout shifts from animations
+    const frameId = requestAnimationFrame(resetScroll);
+    const timer = setTimeout(resetScroll, 50);
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      clearTimeout(timer);
+    };
+  }, [activeTab]);
 
   // Bootstrap initial configurations on mount
   useEffect(() => {
@@ -306,7 +336,7 @@ export default function App() {
         </header>
 
         {/* Main Screen Content */}
-        <main className="app-scrollable-content" style={styles.main}>
+        <main ref={mainRef} className="app-scrollable-content" style={styles.main}>
           {renderContent()}
         </main>
       </div>
