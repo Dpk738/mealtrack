@@ -1,13 +1,13 @@
-const CACHE_NAME = 'nutritrack-v1';
+const CACHE_NAME = 'nutritrack-v2';
 const ASSETS = [
   '/',
   '/index.html',
-  '/icon-192.png',
-  '/icon-512.png',
+  '/favicon.svg',
   '/manifest.json'
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting();
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS).catch((err) => {
@@ -27,7 +27,7 @@ self.addEventListener('activate', (e) => {
           }
         })
       );
-    })
+    }).then(() => self.clients.claim())
   );
 });
 
@@ -37,29 +37,33 @@ self.addEventListener('fetch', (e) => {
     return;
   }
 
+  // Network-First Strategy to ensure users always see the latest hosted version when online
   e.respondWith(
-    caches.match(e.request).then((cachedResponse) => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-      return fetch(e.request).then((response) => {
+    fetch(e.request)
+      .then((networkResponse) => {
         // Cache new local static assets dynamically on request
         if (
           e.request.method === 'GET' &&
-          response.status === 200 &&
+          networkResponse.status === 200 &&
           (e.request.url.startsWith(self.location.origin) || e.request.url.includes('fonts.googleapis.com'))
         ) {
-          const responseClone = response.clone();
+          const responseClone = networkResponse.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(e.request, responseClone);
           });
         }
-        return response;
-      });
-    }).catch(() => {
-      if (e.request.mode === 'navigate') {
-        return caches.match('/');
-      }
-    })
+        return networkResponse;
+      })
+      .catch(() => {
+        // Fallback to cache when offline
+        return caches.match(e.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            return cachedResponse;
+          }
+          if (e.request.mode === 'navigate') {
+            return caches.match('/');
+          }
+        });
+      })
   );
 });
