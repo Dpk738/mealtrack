@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getSupabase } from '../supabaseClient';
 import { LogIn, UserPlus, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import MinimalistLogo from './MinimalistLogo';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -56,7 +57,7 @@ export default function Auth() {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.card}>
         <div style={styles.logoContainer}>
-          <div style={styles.logoText}>NutriTrack</div>
+          <MinimalistLogo size={28} />
           <div style={styles.logoSub}>Your AI-Powered Nutrition Partner</div>
         </div>
 
@@ -176,16 +177,12 @@ const styles = {
     gap: '20px',
   },
   logoContainer: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
     textAlign: 'center' as const,
     marginBottom: '8px',
-  },
-  logoText: {
-    fontSize: '28px',
-    fontWeight: 800,
-    letterSpacing: '-1.5px',
-    background: 'linear-gradient(90deg, #ffffff, #cbf600)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    gap: '8px',
   },
   logoSub: {
     fontSize: '11px',

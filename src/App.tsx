@@ -8,6 +8,7 @@ import Analytics from './components/Analytics';
 import Settings from './components/Settings';
 import Auth from './components/Auth';
 import DbSetup from './components/DbSetup';
+import MinimalistLogo from './components/MinimalistLogo';
 import { Home, Camera, History as HistoryIcon, BarChart2, Settings as SettingsIcon } from 'lucide-react';
 import './App.css';
 
@@ -412,10 +413,11 @@ export default function App() {
 
   return (
     <div className="app-main-layout">
-      {/* Left Sidebar for Desktop/Laptop */}
       <aside className="app-sidebar">
         <div>
-          <div className="sidebar-logo">NutriTrack</div>
+          <div className="sidebar-logo" style={{ background: 'none', WebkitTextFillColor: 'initial', padding: '0 8px' }}>
+            <MinimalistLogo size={24} />
+          </div>
           <nav className="sidebar-menu">
             <button
               className={`sidebar-item ${activeTab === 'dashboard' ? 'sidebar-item-active' : ''}`}
@@ -460,7 +462,9 @@ export default function App() {
       <div className="app-content-wrapper">
         {/* Top Header */}
         <header style={styles.header}>
-          <h1 className="app-header-logo" style={styles.logo}>NutriTrack</h1>
+          <h1 className="app-header-logo" style={styles.logo}>
+            <MinimalistLogo size={20} />
+          </h1>
           <span style={styles.dateDisplay}>
             {formatDateDisplay(selectedDate)}
           </span>
@@ -541,12 +545,8 @@ const styles = {
     zIndex: 90,
   },
   logo: {
-    fontSize: '20px',
-    fontWeight: 800,
-    letterSpacing: '-1px',
-    background: 'linear-gradient(90deg, #ffffff, #cbf600)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    display: 'flex',
+    alignItems: 'center',
   },
   dateDisplay: {
     fontSize: '13px',

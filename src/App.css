@@ -92,14 +92,10 @@
 }
 
 .sidebar-logo {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: -1px;
-  background: linear-gradient(90deg, #ffffff, #cbf600);
-  -webkit-background-clip: text;
-  -webkit-text-fillColor: transparent;
   margin-bottom: 32px;
   padding: 0 8px;
+  display: flex;
+  align-items: center;
 }
 
 .sidebar-menu {

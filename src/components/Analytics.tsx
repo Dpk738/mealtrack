@@ -229,10 +229,6 @@ export default function Analytics() {
 
 
   const getMetricColor = () => {
-    if (metric === 'calories') return '#cbf600';
-    if (metric === 'protein') return '#ffffff';
-    if (metric === 'carbs') return '#cbf600';
-    if (metric === 'fat') return '#ffffff';
     return '#cbf600';
   };
 
@@ -366,7 +362,7 @@ export default function Analytics() {
                     y1={paddingY}
                     x2={chartWidth - paddingX}
                     y2={paddingY}
-                    stroke="rgba(39, 39, 42, 0.3)"
+                    stroke="rgba(203, 246, 0, 0.1)"
                     strokeDasharray="4 4"
                     strokeWidth={1}
                   />
@@ -379,7 +375,7 @@ export default function Analytics() {
                         y1={chartHeight - paddingY - (goalValue / maxVal) * (chartHeight - 2 * paddingY)}
                         x2={chartWidth - paddingX}
                         y2={chartHeight - paddingY - (goalValue / maxVal) * (chartHeight - 2 * paddingY)}
-                        stroke="rgba(255, 255, 255, 0.15)"
+                        stroke="rgba(203, 246, 0, 0.3)"
                         strokeWidth={1.5}
                         strokeDasharray="5 5"
                       />
@@ -492,7 +488,7 @@ const styles = {
     textAlign: 'center' as const,
   },
   activeTimeTab: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: 'rgba(203, 246, 0, 0.08)',
     color: 'var(--text-primary)',
   },
   metricRow: {
@@ -526,9 +522,9 @@ const styles = {
     color: '#cbf600',
   },
   activeProtPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    color: '#ffffff',
+    backgroundColor: 'rgba(203, 246, 0, 0.08)',
+    borderColor: 'rgba(203, 246, 0, 0.25)',
+    color: '#cbf600',
   },
   activeCarbPill: {
     backgroundColor: 'rgba(203, 246, 0, 0.08)',
@@ -536,9 +532,9 @@ const styles = {
     color: '#cbf600',
   },
   activeFatPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderColor: 'rgba(255, 255, 255, 0.25)',
-    color: '#ffffff',
+    backgroundColor: 'rgba(203, 246, 0, 0.08)',
+    borderColor: 'rgba(203, 246, 0, 0.25)',
+    color: '#cbf600',
   },
   summaryStatsCard: {
     backgroundColor: 'var(--bg-card)',
@@ -588,7 +584,7 @@ const styles = {
   spinner: {
     width: '24px',
     height: '24px',
-    border: '2px solid rgba(255, 255, 255, 0.05)',
+    border: '2px solid rgba(203, 246, 0, 0.05)',
     borderTopColor: 'var(--text-secondary)',
     borderRadius: '50%',
     animation: 'spin 1s linear infinite',

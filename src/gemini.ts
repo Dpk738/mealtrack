@@ -167,3 +167,71 @@ Formatting rules:
     return `You've consumed ${Math.round(totalCalories)} calories and logged ${totalWater} ml of water today. Configure/check your API key for advanced AI insights.`;
   }
 }
+
+export async function analyzeFoodText(
+  text: string,
+  apiKey: string,
+  modelName: string = 'gemini-2.5-flash'
+): Promise<DetectedNutrition> {
+  if (!apiKey) {
+    throw new Error('Gemini API key is required. Please set it in Settings.');
+  }
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: modelName,
+    generationConfig: {
+      responseMimeType: 'application/json'
+    }
+  });
+
+  const prompt = `
+Analyze the food described in this text: "${text}". Estimate the nutrition details for all items combined.
+Return a JSON object in this exact format:
+{
+  "name": "Name of the food / meal",
+  "servingSize": "Typical unit (e.g., portion, 100g rice + 200g chicken)",
+  "servingQuantity": 1,
+  "calories": 250,
+  "protein": 12,
+  "carbs": 30,
+  "fat": 8,
+  "fiber": 3,
+  "sugar": 5,
+  "description": "Brief one sentence individual portion and calorie breakdown in this exact format: '[Item1] of [weight] grams has [calories] calories and [Item2] with [weight] grams has [calories] calories' (e.g., 'rice of 100 grams has 130 calories and chicken breast with 200 grams has 330 calories')."
+}
+Notes:
+- Provide estimates for the food described. Use database averages for these ingredients (e.g. 100g of white rice, 200g of chicken breast, etc.).
+- All macronutrients (protein, carbs, fat, fiber, sugar) should be numbers representing grams (g).
+- Calories should be a number representing kcal.
+- Be as accurate as possible for the identified food items.
+- Write the description strictly in a single clear sentence containing each item, its estimated weight in grams, and its estimated calories, following the provided example format exactly.
+`;
+
+  try {
+    const result = await model.generateContent(prompt);
+    const responseText = result.response.text();
+    
+    if (!responseText) {
+      throw new Error('Empty response received from Gemini.');
+    }
+
+    const parsed = JSON.parse(responseText);
+    return {
+      name: parsed.name || 'Described Meal',
+      servingSize: parsed.servingSize || '1 portion',
+      servingQuantity: Number(parsed.servingQuantity) || 1,
+      calories: Math.max(0, Math.round(Number(parsed.calories) || 0)),
+      protein: Math.max(0, Math.round((Number(parsed.protein) || 0) * 10) / 10),
+      carbs: Math.max(0, Math.round((Number(parsed.carbs) || 0) * 10) / 10),
+      fat: Math.max(0, Math.round((Number(parsed.fat) || 0) * 10) / 10),
+      fiber: Math.max(0, Math.round((Number(parsed.fiber) || 0) * 10) / 10),
+      sugar: Math.max(0, Math.round((Number(parsed.sugar) || 0) * 10) / 10),
+      description: parsed.description || '',
+    };
+  } catch (e) {
+    console.error('Gemini text analysis failed:', e);
+    throw e;
+  }
+}
+

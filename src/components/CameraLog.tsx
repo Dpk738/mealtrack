@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { analyzeFoodImage } from '../gemini';
+import { analyzeFoodImage, analyzeFoodText } from '../gemini';
 import { getSupabase } from '../supabaseClient';
 import { Camera, Image as ImageIcon, Sparkles, Save, X, AlertTriangle, Utensils } from 'lucide-react';
 
@@ -44,6 +44,8 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
   const [fiber, setFiber] = useState(0);
   const [sugar, setSugar] = useState(0);
   const [description, setDescription] = useState('');
+
+  const [textInput, setTextInput] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -193,6 +195,39 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
     }
   };
 
+  const handleAnalyzeText = async () => {
+    const key = localStorage.getItem('geminiApiKey') || '';
+    if (!key) {
+      setErrorMsg('No Gemini API Key found. Please add a key in Settings to use text analysis.');
+      return;
+    }
+    const modelName = localStorage.getItem('geminiModel') || 'gemini-2.5-flash';
+
+    setLoading(true);
+    setErrorMsg('');
+    setPhoto('text');
+
+    try {
+      const result = await analyzeFoodText(textInput, key, modelName);
+      
+      setMealName(result.name);
+      setServingSize(result.servingSize);
+      setServingQuantity(result.servingQuantity);
+      setCalories(result.calories);
+      setProtein(result.protein);
+      setCarbs(result.carbs);
+      setFat(result.fat);
+      setFiber(result.fiber);
+      setSugar(result.sugar);
+      setDescription(result.description || '');
+    } catch (e: any) {
+      console.error(e);
+      setErrorMsg(e.message || 'AI text analysis failed. You can still input values manually.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleManualInput = () => {
     setPhoto(null);
     setMealName('');
@@ -239,7 +274,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
         throw new Error('Supabase is not configured. Please go to Setup and enter your connection details.');
       }
 
-      if (photo && photo !== 'manual' && photo.startsWith('data:')) {
+      if (photo && photo !== 'manual' && photo !== 'text' && photo.startsWith('data:')) {
         // Upload photo to Supabase
         const blob = dataURItoBlob(photo);
         const fileExt = 'jpg';
@@ -282,6 +317,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
 
       // Reset screen
       setPhoto(null);
+      setTextInput('');
     } catch (err: any) {
       console.error(err);
       setErrorMsg(err.message || 'Failed to save meal log.');
@@ -294,6 +330,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
     setPhoto(null);
     setLoading(false);
     setErrorMsg('');
+    setTextInput('');
   };
 
   const triggerCamera = () => {
@@ -321,11 +358,11 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
       {/* API Key Warning */}
       {!hasApiKey && (
         <div style={styles.warningAlert}>
-          <AlertTriangle size={18} style={{ color: '#ffd600', flexShrink: 0 }} />
+          <AlertTriangle size={18} style={{ color: 'var(--text-primary)', flexShrink: 0 }} />
           <div style={styles.warningTextContainer}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#f4f4f5' }}>API Key Missing</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>API Key Missing</span>
             <p style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-              Add a Gemini API key in Settings to unlock automatic food photo recognition.
+              Add a Gemini API key in Settings to unlock automatic food photo & description recognition.
             </p>
             <button onClick={() => onNavigate('settings')} style={styles.warningLinkBtn}>
               Go to Settings
@@ -356,6 +393,29 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
               Manual Log
             </button>
           </div>
+
+          {/* Text sentence logging option */}
+          <div style={styles.textLogContainer}>
+            <div style={styles.textLogDivider}>
+              <span style={styles.dividerText}>OR LOG WITH DESCRIPTION</span>
+            </div>
+            <div style={styles.textInputWrapper}>
+              <textarea
+                placeholder="e.g. 100 g of rice and 200 g of chicken breast"
+                value={textInput}
+                onChange={(e) => setTextInput(e.target.value)}
+                style={styles.textLogArea}
+              />
+              <button
+                type="button"
+                style={styles.textAnalyzeBtn}
+                onClick={handleAnalyzeText}
+                disabled={!textInput.trim()}
+              >
+                <Sparkles size={14} style={{ marginRight: 6 }} /> Analyze with Gemini
+              </button>
+            </div>
+          </div>
           
           <input
             type="file"
@@ -371,7 +431,7 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
         <div style={styles.scanContainer} className="animate-fade-in">
           {errorMsg && (
             <div style={styles.errorAlert}>
-              <AlertTriangle size={16} style={{ color: '#ff5e62', flexShrink: 0 }} />
+              <AlertTriangle size={16} style={{ color: 'var(--text-primary)', flexShrink: 0 }} />
               <span style={{ fontSize: '12px' }}>{errorMsg}</span>
             </div>
           )}
@@ -406,14 +466,20 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
       {photo && loading && (
         <div style={styles.scanContainer} className="animate-fade-in">
           <div style={styles.scanCard}>
-            <img src={photo} alt="Food analysis" style={styles.scanImage} />
+            {photo !== 'text' ? (
+              <img src={photo} alt="Food analysis" style={styles.scanImage} />
+            ) : (
+              <div style={styles.mealPhotoPlaceholder}>
+                <Sparkles size={48} className="animate-pulse-glow" style={{ color: 'var(--text-primary)' }} />
+              </div>
+            )}
             <div style={styles.scanLine} />
           </div>
           
           <div style={styles.loaderStatus}>
-            <Sparkles size={20} className="animate-pulse-glow" style={{ color: '#00f2fe' }} />
+            <Sparkles size={20} className="animate-pulse-glow" style={{ color: '#cbf600' }} />
             <span style={styles.loaderText} className="animate-pulse-glow">
-              Gemini Vision recognition in progress...
+              {photo === 'text' ? 'Gemini AI text analysis in progress...' : 'Gemini Vision recognition in progress...'}
             </span>
             <p style={styles.loaderSub}>Estimating calories, proteins, carbohydrates, and fats...</p>
           </div>
@@ -429,11 +495,11 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
         saving ? (
           <div style={styles.scanContainer} className="animate-fade-in">
             <div style={styles.scanCard}>
-              {photo !== 'manual' ? (
+              {photo !== 'manual' && photo !== 'text' ? (
                 <img src={photo} alt="Food saving" style={styles.scanImage} />
               ) : (
                 <div style={styles.mealPhotoPlaceholder}>
-                  <Utensils size={32} style={{ color: 'var(--text-muted)' }} />
+                  <Utensils size={32} style={{ color: 'var(--text-primary)' }} />
                 </div>
               )}
               <div style={styles.scanLine} />
@@ -452,12 +518,31 @@ export default function CameraLog({ onMealSaved, onNavigate }: CameraLogProps) {
             <div className="camera-review-grid" style={{ width: '100%' }}>
               {/* Left Column: Image Preview and Cancel/Save buttons */}
               <div className="camera-left-col" style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
-                {photo !== 'manual' && (
+                {photo !== 'manual' && photo !== 'text' && (
                   <div style={styles.previewImageContainer}>
                     <img src={photo} alt="Food preview" style={styles.previewImage} />
                     <button type="button" onClick={handleCancel} style={styles.changePhotoBtn}>
                       Change Photo
                     </button>
+                  </div>
+                )}
+
+                {photo === 'text' && (
+                  <div style={{
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '16px',
+                    padding: '20px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '8px'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#cbf600', fontSize: '13px', fontWeight: 600 }}>
+                      <Sparkles size={14} /> Description Analysed
+                    </div>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic', lineHeight: '1.4' }}>
+                      "{textInput}"
+                    </span>
                   </div>
                 )}
                 
@@ -643,8 +728,8 @@ const styles = {
   warningAlert: {
     display: 'flex',
     gap: '12px',
-    backgroundColor: 'rgba(255, 214, 0, 0.06)',
-    border: '1px solid rgba(255, 214, 0, 0.2)',
+    backgroundColor: 'rgba(203, 246, 0, 0.05)',
+    border: '1px solid var(--border-color)',
     padding: '14px',
     borderRadius: '16px',
     alignItems: 'flex-start' as const,
@@ -656,7 +741,7 @@ const styles = {
   warningLinkBtn: {
     background: 'none',
     border: 'none',
-    color: '#ffd600',
+    color: '#cbf600',
     fontSize: '12px',
     fontWeight: 600,
     cursor: 'pointer',
@@ -747,8 +832,8 @@ const styles = {
     left: 0,
     width: '100%',
     height: '4px',
-    background: 'linear-gradient(90deg, transparent, #00f2fe, transparent)',
-    boxShadow: '0 0 12px #00f2fe',
+    background: 'linear-gradient(90deg, transparent, #cbf600, transparent)',
+    boxShadow: '0 0 12px #cbf600',
     animation: 'scan 2s linear infinite',
   },
   loaderStatus: {
@@ -770,9 +855,9 @@ const styles = {
     lineHeight: '1.4',
   },
   cancelBtn: {
-    backgroundColor: 'rgba(255, 94, 98, 0.1)',
-    color: '#ff5e62',
-    border: '1px solid rgba(255, 94, 98, 0.2)',
+    backgroundColor: 'rgba(203, 246, 0, 0.05)',
+    color: '#cbf600',
+    border: '1px solid rgba(203, 246, 0, 0.15)',
     borderRadius: '12px',
     padding: '10px 24px',
     fontSize: '13px',
@@ -815,11 +900,11 @@ const styles = {
     display: 'flex',
     alignItems: 'center' as const,
     gap: '10px',
-    backgroundColor: 'rgba(255, 94, 98, 0.08)',
-    border: '1px solid rgba(255, 94, 98, 0.2)',
+    backgroundColor: 'rgba(203, 246, 0, 0.05)',
+    border: '1px solid var(--border-color)',
     borderRadius: '12px',
     padding: '12px',
-    color: '#ff5e62',
+    color: '#cbf600',
   },
   formSection: {
     backgroundColor: 'var(--bg-card)',
@@ -929,5 +1014,62 @@ const styles = {
     display: 'flex',
     alignItems: 'center' as const,
     justifyContent: 'center' as const,
+  },
+  textLogContainer: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '12px',
+    marginTop: '20px',
+    width: '100%',
+  },
+  textLogDivider: {
+    display: 'flex',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    width: '100%',
+    borderBottom: '1px solid var(--border-color)',
+    lineHeight: '0.1em',
+    margin: '10px 0',
+  },
+  dividerText: {
+    background: 'var(--bg-dark)',
+    padding: '0 10px',
+    fontSize: '11px',
+    color: 'var(--text-muted)',
+    fontWeight: 600,
+    letterSpacing: '0.5px',
+  },
+  textInputWrapper: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    gap: '12px',
+    width: '100%',
+  },
+  textLogArea: {
+    width: '100%',
+    height: '80px',
+    padding: '12px 14px',
+    borderRadius: '12px',
+    backgroundColor: 'var(--bg-card)',
+    border: '1px solid var(--border-color)',
+    color: 'var(--text-primary)',
+    fontSize: '14px',
+    fontFamily: 'inherit',
+    resize: 'none' as const,
+    outline: 'none',
+  },
+  textAnalyzeBtn: {
+    width: '100%',
+    padding: '12px 0',
+    border: '1px solid var(--text-primary)',
+    borderRadius: '12px',
+    backgroundColor: 'rgba(203, 246, 0, 0.08)',
+    color: 'var(--text-primary)',
+    fontSize: '13px',
+    fontWeight: 600,
+    display: 'flex',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    cursor: 'pointer',
   },
 };

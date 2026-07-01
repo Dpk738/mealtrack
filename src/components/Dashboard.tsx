@@ -96,7 +96,7 @@ export default function Dashboard({
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
           {/* Track circle */}
           <circle
-            stroke="rgba(39, 39, 42, 0.5)"
+            stroke="rgba(203, 246, 0, 0.05)"
             fill="transparent"
             strokeWidth={stroke}
             r={radius}
@@ -132,24 +132,24 @@ export default function Dashboard({
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
           <linearGradient id="calGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="0%" stopColor="#000000" />
             <stop offset="100%" stopColor="#cbf600" />
           </linearGradient>
           <linearGradient id="protGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" />
-            <stop offset="100%" stopColor="#a1a1aa" />
+            <stop offset="0%" stopColor="#000000" />
+            <stop offset="100%" stopColor="#cbf600" />
           </linearGradient>
           <linearGradient id="carbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#cbf600" />
-            <stop offset="100%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor="#000000" />
           </linearGradient>
           <linearGradient id="fatGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="0%" stopColor="#000000" />
             <stop offset="100%" stopColor="#cbf600" />
           </linearGradient>
           <linearGradient id="waterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#cbf600" />
-            <stop offset="100%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor="#000000" />
           </linearGradient>
         </defs>
       </svg>
@@ -167,7 +167,7 @@ export default function Dashboard({
         <div className="main-ring-card-details-responsive" style={styles.calSummaryDetails}>
           {remainingCal >= 0 ? (
             <div style={styles.calStatusText}>
-              <span style={{ fontSize: '20px', fontWeight: 700, color: '#ffffff' }}>{Math.round(remainingCal)}</span>
+              <span style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)' }}>{Math.round(remainingCal)}</span>
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}> kcal remaining</span>
             </div>
           ) : (
@@ -469,7 +469,7 @@ const styles = {
     gap: '8px',
   },
   waterBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    backgroundColor: 'rgba(203, 246, 0, 0.03)',
     border: '1px solid var(--border-color)',
     borderRadius: '10px',
     padding: '10px 0',
@@ -581,7 +581,7 @@ const styles = {
   onboardingTitle: {
     fontSize: '15px',
     fontWeight: 700,
-    color: '#ffffff',
+    color: 'var(--text-primary)',
     marginBottom: '6px',
     letterSpacing: '-0.3px',
   },

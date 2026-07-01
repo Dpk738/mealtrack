@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { testSupabaseConnection, resetSupabaseInstance } from '../supabaseClient';
 import { Database, Link2, Key, HelpCircle, AlertCircle, Check, Laptop, Smartphone } from 'lucide-react';
+import MinimalistLogo from './MinimalistLogo';
 
 interface DbSetupProps {
   onSuccess: () => void;
@@ -55,7 +56,7 @@ export default function DbSetup({ onSuccess }: DbSetupProps) {
     <div style={styles.container} className="animate-fade-in">
       <div style={styles.card}>
         <div style={styles.logoContainer}>
-          <div style={styles.logoText}>NutriTrack</div>
+          <MinimalistLogo size={28} />
           <div style={styles.logoSub}>Your AI-Powered Nutrition Partner</div>
         </div>
 
@@ -211,16 +212,12 @@ const styles = {
     gap: '20px',
   },
   logoContainer: {
+    display: 'flex',
+    flexDirection: 'column' as const,
+    alignItems: 'center' as const,
     textAlign: 'center' as const,
     marginBottom: '4px',
-  },
-  logoText: {
-    fontSize: '28px',
-    fontWeight: 800,
-    letterSpacing: '-1.5px',
-    background: 'linear-gradient(90deg, #ffffff, #cbf600)',
-    WebkitBackgroundClip: 'text',
-    WebkitTextFillColor: 'transparent',
+    gap: '8px',
   },
   logoSub: {
     fontSize: '11px',
@@ -292,7 +289,7 @@ const styles = {
     transition: 'all 0.2s',
   },
   activeTab: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(203, 246, 0, 0.08)',
     color: 'var(--text-primary)',
   },
   form: {
@@ -361,8 +358,8 @@ const styles = {
   },
   codeBlock: {
     margin: '6px 0 0 0',
-    backgroundColor: '#050505',
-    color: '#a1a1aa',
+    backgroundColor: '#000000',
+    color: 'var(--text-secondary)',
     border: '1px solid var(--border-color)',
     borderRadius: '8px',
     padding: '10px',
@@ -389,9 +386,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    backgroundColor: 'rgba(255, 94, 98, 0.05)',
-    border: '1px solid rgba(255, 94, 98, 0.25)',
-    color: '#ff5e62',
+    backgroundColor: 'rgba(203, 246, 0, 0.05)',
+    border: '1px solid rgba(203, 246, 0, 0.25)',
+    color: '#cbf600',
     borderRadius: '12px',
     padding: '12px',
     fontSize: '12px',

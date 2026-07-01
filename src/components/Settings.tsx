@@ -228,15 +228,15 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', width: '100%', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px', marginBottom: '8px' }}>
         <h2 style={styles.title}>Setup & Goals</h2>
         {user && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(255,255,255,0.03)', padding: '6px 12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Logged in as <strong style={{ color: '#ffffff' }}>{user.email}</strong></span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', backgroundColor: 'rgba(203, 246, 0, 0.03)', padding: '6px 12px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Logged in as <strong style={{ color: 'var(--text-primary)' }}>{user.email}</strong></span>
             <button
               type="button"
               onClick={handleLogout}
               style={{
-                backgroundColor: 'rgba(255, 94, 98, 0.1)',
-                border: '1px solid rgba(255, 94, 98, 0.25)',
-                color: '#ff5e62',
+                backgroundColor: 'rgba(203, 246, 0, 0.05)',
+                border: '1px solid var(--border-color)',
+                color: '#cbf600',
                 borderRadius: '8px',
                 padding: '4px 10px',
                 fontSize: '12px',
@@ -539,7 +539,7 @@ const styles = {
     marginTop: '8px',
   },
   connectionTestBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(203, 246, 0, 0.05)',
     border: '1px solid var(--border-color)',
     color: 'var(--text-primary)',
     borderRadius: '10px',
@@ -581,7 +581,7 @@ const styles = {
     color: 'var(--text-primary)',
   },
   copyBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: 'rgba(203, 246, 0, 0.05)',
     border: '1px solid var(--border-color)',
     color: 'var(--text-secondary)',
     borderRadius: '8px',
@@ -595,10 +595,10 @@ const styles = {
     width: '100%',
     maxHeight: '180px',
     overflowY: 'auto' as const,
-    backgroundColor: '#050505',
-    color: '#a1a1aa',
+    backgroundColor: '#000000',
+    color: 'var(--text-secondary)',
     border: '1px solid var(--border-color)',
-    borderRadius: '8px',
+    borderRadius: '10px',
     padding: '12px',
     fontSize: '11px',
     fontFamily: 'monospace',
