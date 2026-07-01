@@ -289,7 +289,7 @@ const styles = {
     transition: 'all 0.2s',
   },
   activeTab: {
-    backgroundColor: 'rgba(203, 246, 0, 0.08)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
     color: 'var(--text-primary)',
   },
   form: {
@@ -358,8 +358,8 @@ const styles = {
   },
   codeBlock: {
     margin: '6px 0 0 0',
-    backgroundColor: '#000000',
-    color: 'var(--text-secondary)',
+    backgroundColor: '#050505',
+    color: '#a1a1aa',
     border: '1px solid var(--border-color)',
     borderRadius: '8px',
     padding: '10px',
@@ -386,9 +386,9 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '10px',
-    backgroundColor: 'rgba(203, 246, 0, 0.05)',
-    border: '1px solid rgba(203, 246, 0, 0.25)',
-    color: '#cbf600',
+    backgroundColor: 'rgba(255, 94, 98, 0.05)',
+    border: '1px solid rgba(255, 94, 98, 0.25)',
+    color: '#ff5e62',
     borderRadius: '12px',
     padding: '12px',
     fontSize: '12px',

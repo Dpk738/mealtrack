@@ -96,7 +96,7 @@ export default function Dashboard({
         <svg width={size} height={size} style={{ transform: 'rotate(-90deg)' }}>
           {/* Track circle */}
           <circle
-            stroke="rgba(203, 246, 0, 0.05)"
+            stroke="rgba(39, 39, 42, 0.5)"
             fill="transparent"
             strokeWidth={stroke}
             r={radius}
@@ -132,24 +132,24 @@ export default function Dashboard({
       <svg style={{ position: 'absolute', width: 0, height: 0 }}>
         <defs>
           <linearGradient id="calGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#000000" />
+            <stop offset="0%" stopColor="#ffffff" />
             <stop offset="100%" stopColor="#cbf600" />
           </linearGradient>
           <linearGradient id="protGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#000000" />
-            <stop offset="100%" stopColor="#cbf600" />
+            <stop offset="0%" stopColor="#ffffff" />
+            <stop offset="100%" stopColor="#a1a1aa" />
           </linearGradient>
           <linearGradient id="carbGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#cbf600" />
-            <stop offset="100%" stopColor="#000000" />
+            <stop offset="100%" stopColor="#ffffff" />
           </linearGradient>
           <linearGradient id="fatGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#000000" />
+            <stop offset="0%" stopColor="#ffffff" />
             <stop offset="100%" stopColor="#cbf600" />
           </linearGradient>
           <linearGradient id="waterGrad" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#cbf600" />
-            <stop offset="100%" stopColor="#000000" />
+            <stop offset="100%" stopColor="#ffffff" />
           </linearGradient>
         </defs>
       </svg>
