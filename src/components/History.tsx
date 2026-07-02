@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import type { Meal } from '../supabaseClient';
-import { Calendar, Trash2, Edit2, ChevronLeft, ChevronRight, Save, X, Utensils } from 'lucide-react';
+import { Calendar, Trash2, Edit2, ChevronLeft, ChevronRight, Save, X, Utensils, AlertCircle } from 'lucide-react';
 
 interface HistoryProps {
   meals: Meal[];
   selectedDate: string;
   onDateChange: (date: string) => void;
-  onUpdateMeal: (meal: Meal) => void;
-  onDeleteMeal: (id: number) => void;
+  onUpdateMeal: (meal: Meal) => Promise<void>;
+  onDeleteMeal: (id: number) => Promise<void>;
 }
 
 
@@ -19,6 +19,7 @@ export default function History({
   onDeleteMeal
 }: HistoryProps) {
   const [editingMealId, setEditingMealId] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState('');
   
   // Edit Form State
   const [editName, setEditName] = useState('');
@@ -57,30 +58,41 @@ export default function History({
     setEditDesc(meal.description || '');
   };
 
-  const handleSaveEdit = (meal: Meal) => {
+  const handleSaveEdit = async (meal: Meal) => {
     if (!meal.id) return;
+    setErrorMsg('');
     
-    onUpdateMeal({
-      ...meal,
-      name: editName.trim(),
-      serving_quantity: Math.max(0.1, Number(editQty) || 1),
-      serving_size: editSize.trim(),
-      calories: Math.max(0, Math.round(Number(editCal) || 0)),
-      protein: Math.max(0, Number(editProt) || 0),
-      carbs: Math.max(0, Number(editCarb) || 0),
-      fat: Math.max(0, Number(editFat) || 0),
-      fiber: Math.max(0, Number(editFiber) || 0),
-      sugar: Math.max(0, Number(editSugar) || 0),
-      description: editDesc.trim() || undefined,
-    });
-
-    setEditingMealId(null);
+    try {
+      await onUpdateMeal({
+        ...meal,
+        name: editName.trim(),
+        serving_quantity: Math.max(0.1, Number(editQty) || 1),
+        serving_size: editSize.trim(),
+        calories: Math.max(0, Math.round(Number(editCal) || 0)),
+        protein: Math.max(0, Number(editProt) || 0),
+        carbs: Math.max(0, Number(editCarb) || 0),
+        fat: Math.max(0, Number(editFat) || 0),
+        fiber: Math.max(0, Number(editFiber) || 0),
+        sugar: Math.max(0, Number(editSugar) || 0),
+        description: editDesc.trim() || undefined,
+      });
+      setEditingMealId(null);
+    } catch (err: any) {
+      console.error(err);
+      setErrorMsg(err.message || 'Failed to update meal.');
+    }
   };
 
-  const handleDeleteClick = (id?: number) => {
+  const handleDeleteClick = async (id?: number) => {
     if (!id) return;
     if (window.confirm('Delete this meal log?')) {
-      onDeleteMeal(id);
+      setErrorMsg('');
+      try {
+        await onDeleteMeal(id);
+      } catch (err: any) {
+        console.error(err);
+        setErrorMsg(err.message || 'Failed to delete meal.');
+      }
     }
   };
 
@@ -125,6 +137,24 @@ export default function History({
           </button>
         </div>
       </div>
+
+      {errorMsg && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backgroundColor: 'rgba(255, 94, 98, 0.05)',
+          border: '1px solid rgba(255, 94, 98, 0.2)',
+          borderRadius: '12px',
+          padding: '10px 14px',
+          color: '#ff5e62',
+          fontSize: '13px',
+          marginBottom: '16px'
+        }}>
+          <AlertCircle size={16} style={{ flexShrink: 0 }} />
+          <span>{errorMsg}</span>
+        </div>
+      )}
 
       {/* Mini Summary of the Day */}
       {meals.length > 0 && (

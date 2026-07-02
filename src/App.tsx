@@ -69,6 +69,7 @@ export default function App() {
   const [dbConnected, setDbConnected] = useState<boolean>(getSupabase() !== null);
   const [session, setSession] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState<boolean>(true);
+  const [dbTrigger, setDbTrigger] = useState<number>(0);
 
   // Supabase Auth Session listener
   useEffect(() => {
@@ -91,7 +92,7 @@ export default function App() {
     });
 
     return () => subscription.unsubscribe();
-  }, [dbConnected]);
+  }, [dbConnected, dbTrigger]);
 
   // Bootstrap initial configurations on mount
   useEffect(() => {
@@ -220,7 +221,9 @@ export default function App() {
   const handleAddWater = async (amount: number) => {
     if (amount <= 0) return;
     const supabase = getSupabase();
-    if (!supabase) return;
+    if (!supabase) {
+      throw new Error('Supabase client is not configured.');
+    }
 
     const newLog = {
       date: selectedDate,
@@ -229,18 +232,19 @@ export default function App() {
       user_id: session?.user?.id || null
     };
 
-    try {
-      const { error } = await supabase.from('water').insert([newLog]);
-      if (error) console.error('Add water error:', error);
-      await loadDayData();
-    } catch (e) {
-      console.error('Error adding water to Supabase:', e);
+    const { error } = await supabase.from('water').insert([newLog]);
+    if (error) {
+      console.error('Add water error:', error);
+      throw new Error(error.message || 'Failed to add water log.');
     }
+    await loadDayData();
   };
 
   const handleMealSaved = async (mealData: Omit<Meal, 'date' | 'timestamp'>) => {
     const supabase = getSupabase();
-    if (!supabase) return;
+    if (!supabase) {
+      throw new Error('Supabase client is not configured.');
+    }
 
     const newMeal = {
       ...mealData,
@@ -249,75 +253,77 @@ export default function App() {
       user_id: session?.user?.id || null
     };
 
-    try {
-      const { error } = await supabase.from('meals').insert([newMeal]);
-      if (error) console.error('Save meal error:', error);
-      await loadDayData();
-      setActiveTab('dashboard'); // Redirect to dashboard to see results
-    } catch (e) {
-      console.error('Error saving meal to Supabase:', e);
+    const { error } = await supabase.from('meals').insert([newMeal]);
+    if (error) {
+      console.error('Save meal error:', error);
+      throw new Error(error.message || 'Failed to save meal log.');
     }
+    await loadDayData();
+    setActiveTab('dashboard'); // Redirect to dashboard to see results
   };
 
   const handleUpdateMeal = async (updatedMeal: Meal) => {
     if (!updatedMeal.id) return;
     const supabase = getSupabase();
-    if (!supabase) return;
-
-    try {
-      let query = supabase
-        .from('meals')
-        .update({
-          name: updatedMeal.name,
-          serving_quantity: updatedMeal.serving_quantity,
-          serving_size: updatedMeal.serving_size,
-          calories: updatedMeal.calories,
-          protein: updatedMeal.protein,
-          carbs: updatedMeal.carbs,
-          fat: updatedMeal.fat,
-          fiber: updatedMeal.fiber,
-          sugar: updatedMeal.sugar,
-          description: updatedMeal.description
-        })
-        .eq('id', updatedMeal.id);
-
-      if (session?.user?.id) {
-        query = query.eq('user_id', session.user.id);
-      }
-
-      const { error } = await query;
-      if (error) console.error('Update meal error:', error);
-      await loadDayData();
-    } catch (e) {
-      console.error('Error updating meal in Supabase:', e);
+    if (!supabase) {
+      throw new Error('Supabase client is not configured.');
     }
+
+    let query = supabase
+      .from('meals')
+      .update({
+        name: updatedMeal.name,
+        serving_quantity: updatedMeal.serving_quantity,
+        serving_size: updatedMeal.serving_size,
+        calories: updatedMeal.calories,
+        protein: updatedMeal.protein,
+        carbs: updatedMeal.carbs,
+        fat: updatedMeal.fat,
+        fiber: updatedMeal.fiber,
+        sugar: updatedMeal.sugar,
+        description: updatedMeal.description
+      })
+      .eq('id', updatedMeal.id);
+
+    if (session?.user?.id) {
+      query = query.eq('user_id', session.user.id);
+    }
+
+    const { error } = await query;
+    if (error) {
+      console.error('Update meal error:', error);
+      throw new Error(error.message || 'Failed to update meal.');
+    }
+    await loadDayData();
   };
 
   const handleDeleteMeal = async (id: number) => {
     const supabase = getSupabase();
-    if (!supabase) return;
-
-    try {
-      let query = supabase
-        .from('meals')
-        .delete()
-        .eq('id', id);
-
-      if (session?.user?.id) {
-        query = query.eq('user_id', session.user.id);
-      }
-
-      const { error } = await query;
-      if (error) console.error('Delete meal error:', error);
-      await loadDayData();
-    } catch (e) {
-      console.error('Error deleting meal from Supabase:', e);
+    if (!supabase) {
+      throw new Error('Supabase client is not configured.');
     }
+
+    let query = supabase
+      .from('meals')
+      .delete()
+      .eq('id', id);
+
+    if (session?.user?.id) {
+      query = query.eq('user_id', session.user.id);
+    }
+
+    const { error } = await query;
+    if (error) {
+      console.error('Delete meal error:', error);
+      throw new Error(error.message || 'Failed to delete meal.');
+    }
+    await loadDayData();
   };
 
   const handleSettingsSaved = () => {
     const connected = getSupabase() !== null;
     setDbConnected(connected);
+    setDbTrigger(prev => prev + 1);
     refreshGoals();
     // Re-initialize session listener since Supabase instance has changed
     const supabase = getSupabase();

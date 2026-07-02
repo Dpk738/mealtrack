@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { getSupabase } from '../supabaseClient';
 import type { Meal, WaterLog } from '../supabaseClient';
 import { generateDailySummary } from '../gemini';
-import { Flame, Droplet, Brain, Plus, Award, ChevronRight, Database } from 'lucide-react';
+import { Flame, Droplet, Brain, Plus, Award, ChevronRight, Database, AlertCircle } from 'lucide-react';
 
 interface DashboardProps {
   meals: Meal[];
@@ -15,7 +15,7 @@ interface DashboardProps {
     water: number;
   };
   selectedDate: string;
-  onAddWater: (amount: number) => void;
+  onAddWater: (amount: number) => Promise<void>;
   onNavigate: (tab: any) => void;
 }
 
@@ -31,6 +31,17 @@ export default function Dashboard({
   const [loadingInsight, setLoadingInsight] = useState(false);
   const [customWater, setCustomWater] = useState(250);
   const [showCustomWaterInput, setShowCustomWaterInput] = useState(false);
+  const [waterError, setWaterError] = useState('');
+
+  const handleAddWaterClick = async (amount: number) => {
+    setWaterError('');
+    try {
+      await onAddWater(amount);
+    } catch (err: any) {
+      console.error(err);
+      setWaterError(err.message || 'Failed to add water log.');
+    }
+  };
 
   // Load saved insights for current date from localStorage
   useEffect(() => {
@@ -231,10 +242,25 @@ export default function Dashboard({
           />
         </div>
 
+        {waterError && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: '#ff5e62',
+            fontSize: '12px',
+            marginTop: '4px',
+            marginBottom: '4px'
+          }}>
+            <AlertCircle size={12} style={{ flexShrink: 0 }} />
+            <span>{waterError}</span>
+          </div>
+        )}
+
         <div style={styles.waterQuickGrid}>
-          <button style={styles.waterBtn} onClick={() => onAddWater(250)}>+250ml</button>
-          <button style={styles.waterBtn} onClick={() => onAddWater(500)}>+500ml</button>
-          <button style={styles.waterBtn} onClick={() => onAddWater(750)}>+750ml</button>
+          <button style={styles.waterBtn} onClick={() => handleAddWaterClick(250)}>+250ml</button>
+          <button style={styles.waterBtn} onClick={() => handleAddWaterClick(500)}>+500ml</button>
+          <button style={styles.waterBtn} onClick={() => handleAddWaterClick(750)}>+750ml</button>
           <button
             style={{ ...styles.waterBtn, background: showCustomWaterInput ? 'var(--bg-dark)' : 'rgba(255, 255, 255, 0.03)' }}
             onClick={() => setShowCustomWaterInput(!showCustomWaterInput)}
@@ -258,8 +284,8 @@ export default function Dashboard({
               <span>{customWater} ml</span>
               <button
                 style={styles.customWaterAddBtn}
-                onClick={() => {
-                  onAddWater(customWater);
+                onClick={async () => {
+                  await handleAddWaterClick(customWater);
                   setShowCustomWaterInput(false);
                 }}
               >

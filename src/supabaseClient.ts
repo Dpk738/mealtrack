@@ -77,20 +77,48 @@ export async function testSupabaseConnection(url: string, key: string): Promise<
   try {
     const testClient = createClient(url, key);
     
-    // Attempt to query the meals table to check connection and schema availability
-    const { error } = await testClient.from('meals').select('id').limit(1);
-    
-    if (error) {
-      // If error is about table missing, connection is valid but schemas need setup
-      if (error.message.includes('relation "meals" does not exist') || error.code === '42P01') {
+    // 1. Check if 'meals' table exists
+    const { error: mealsErr } = await testClient.from('meals').select('id').limit(1);
+    if (mealsErr) {
+      if (mealsErr.message.includes('relation "meals" does not exist') || mealsErr.code === '42P01') {
         return { 
-          success: true, 
-          message: 'Connected to Supabase, but "meals" table is missing. Run the SQL script to create your tables.' 
+          success: false, 
+          message: 'Connected to Supabase, but "meals" table is missing. Please run the SQL script to create your tables.' 
         };
       }
       return { 
         success: false, 
-        message: `Connection failed: ${error.message}` 
+        message: `Connection failed: ${mealsErr.message}` 
+      };
+    }
+
+    // 2. Check if 'water' table exists
+    const { error: waterErr } = await testClient.from('water').select('id').limit(1);
+    if (waterErr) {
+      if (waterErr.message.includes('relation "water" does not exist') || waterErr.code === '42P01') {
+        return { 
+          success: false, 
+          message: 'Connected to Supabase, but "water" table is missing. Please run the SQL script to create your tables.' 
+        };
+      }
+      return { 
+        success: false, 
+        message: `Connection failed: ${waterErr.message}` 
+      };
+    }
+
+    // 3. Check if 'profiles' table exists
+    const { error: profilesErr } = await testClient.from('profiles').select('id').limit(1);
+    if (profilesErr) {
+      if (profilesErr.message.includes('relation "profiles" does not exist') || profilesErr.code === '42P01') {
+        return { 
+          success: false, 
+          message: 'Connected to Supabase, but "profiles" table is missing. Please run the SQL script to create your tables.' 
+        };
+      }
+      return { 
+        success: false, 
+        message: `Connection failed: ${profilesErr.message}` 
       };
     }
     
